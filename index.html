@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Encore un effort 🐾</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="pin-gate">
+  <div class="paw">🐾</div>
+  <h2>Petit code secret</h2>
+  <input id="pin-input" inputmode="numeric" maxlength="4" placeholder="••••" autofocus />
+  <div id="pin-error"></div>
+  <button id="pin-submit">Entrer</button>
+  <div class="pin-hint">Indice : tu connais déjà le code</div>
+</div>
+
+<div class="wrap" id="app" style="display:none;">
+  <header class="hero" id="header-tap">
+    <div style="font-size:2rem;">🩺🐾</div>
+    <h1>Allez ma vétérinaire préférée</h1>
+    <p>3 derniers jours. On les prend un objectif à la fois.</p>
+  </header>
+
+  <div class="countdowns">
+    <div class="countdown-card">
+      <div class="label">Écrit</div>
+      <div class="time" id="cd-ecrit">--:--:--</div>
+      <div class="sub">1er sept · 8h00</div>
+    </div>
+    <div class="countdown-card">
+      <div class="label">Oral anatomie</div>
+      <div class="time" id="cd-oral">--:--:--</div>
+      <div class="sub">1er sept · 16h00</div>
+    </div>
+  </div>
+
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%;"></div></div>
+
+  <div id="demo-card"></div>
+
+  <div class="setup-banner" id="setup-banner">
+    <p>Écris tous tes objectifs du week-end dans les 3 colonnes et valide ta liste.<br>Mais une fois validée, impossible d'en rajouter bahaha alors prends 2 minutes pour tout mettre (et envoie moi une photo que je suive l'épopée).</p><p>Un conseil: tu seras récompensée à chaque objectifs, alors découpe bien en tout petit objectifs, c'est le but loulou </p>
+    <button id="validate-btn">Valider ma liste jeannial</button>
+    <div id="validate-error"></div>
+  </div>
+
+  <div class="columns">
+    <div class="column">
+      <h3 class="col-title cat-etudes-title">📚 Révisions</h3>
+      <div class="col-list" id="col-etudes"></div>
+      <form class="add-form small" data-cat="etudes">
+        <input type="text" placeholder="+ objectif" autocomplete="off" />
+        <button type="submit">+</button>
+      </form>
+    </div>
+    <div class="column">
+      <h3 class="col-title cat-sport-title">🏃 Sport</h3>
+      <div class="col-list" id="col-sport"></div>
+      <form class="add-form small" data-cat="sport">
+        <input type="text" placeholder="+ objectif" autocomplete="off" />
+        <button type="submit">+</button>
+      </form>
+    </div>
+    <div class="column">
+      <h3 class="col-title cat-amour-title">💛 Social / autre</h3>
+      <div class="col-list" id="col-amour"></div>
+      <form class="add-form small" data-cat="amour">
+        <input type="text" placeholder="+ objectif" autocomplete="off" />
+        <button type="submit">+</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="banner-photo" id="banner-photo" style="display:none;">
+    Oublie pas la photo de tes objectifs jeannial
+  </div>
+</div>
+
+<div id="modal-root"></div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
