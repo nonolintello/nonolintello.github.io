@@ -1,0 +1,10 @@
+<svg width="960" height="320" viewBox="0 0 960 320" xmlns="http://www.w3.org/2000/svg">
+  <rect width="960" height="320" rx="24" fill="#161A33"/>
+  <g font-family="'Space Grotesk','Archivo',sans-serif" font-weight="800" font-size="120">
+    <text x="90" y="200" textLength="86.5" lengthAdjust="spacingAndGlyphs" fill="#F5F2EC">N</text>
+    <text x="176.5" y="200" textLength="86.5" lengthAdjust="spacingAndGlyphs" fill="#F5F2EC">O</text>
+    <text x="263" y="200" textLength="86.5" lengthAdjust="spacingAndGlyphs" fill="#F5F2EC">И</text>
+    <text x="350" y="200" textLength="86.5" lengthAdjust="spacingAndGlyphs" fill="#F5F2EC">O</text>
+    <text x="436" y="200" textLength="434" lengthAdjust="spacingAndGlyphs" fill="#C9972E">VATION</text>
+  </g>
+</svg>

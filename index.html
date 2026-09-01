@@ -1,87 +1,272 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="robots" content="noindex, nofollow" />
-<title>Encore un effort 🐾</title>
-<link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nonovation — Agence web sur mesure</title>
+<meta name="description" content="Nonovation accompagne les professionnels dans leur transition vers le web, avec un site personnalisé et unique qui retransmet vraiment leur identité.">
+<meta name="theme-color" content="#161A33">
+<link rel="icon" type="image/svg+xml" href="identity/04-nonovation-avatar-favicon.svg">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<div id="pin-gate">
-  <div class="paw">🐾</div>
-  <h2>Petit code secret</h2>
-  <input id="pin-input" inputmode="numeric" maxlength="4" placeholder="••••" autofocus />
-  <div id="pin-error"></div>
-  <button id="pin-submit">Entrer</button>
-  <div class="pin-hint">Indice : tu connais déjà le code</div>
-</div>
+<div class="grain"></div>
 
-<div class="wrap" id="app" style="display:none;">
-  <header class="hero" id="header-tap">
-    <div style="font-size:2rem;">🩺🐾</div>
-    <h1>Allez ma vétérinaire préférée</h1>
-    <p>3 derniers jours. On les prend un objectif à la fois.</p>
-  </header>
+<header class="site-header" id="siteHeader">
+  <div class="wrap header-inner">
+    <a href="#top" class="brand" aria-label="Nonovation — accueil">
+      <img src="identity/06-nonovation-logo-sombre_transparent.svg" alt="Nonovation" class="brand-logo">
+    </a>
 
-  <div class="countdowns">
-    <div class="countdown-card">
-      <div class="label">Écrit</div>
-      <div class="time" id="cd-ecrit">--:--:--</div>
-      <div class="sub">1er sept · 8h00</div>
-    </div>
-    <div class="countdown-card">
-      <div class="label">Oral anatomie</div>
-      <div class="time" id="cd-oral">--:--:--</div>
-      <div class="sub">1er sept · 16h00</div>
-    </div>
+    <nav class="nav" id="siteNav">
+      <a href="#approche">Approche</a>
+      <a href="#services">Services</a>
+      <a href="#tarifs">Tarifs</a>
+      <a href="#demo">Démo</a>
+      <a href="#contact">Contact</a>
+    </nav>
+
+    <a href="#contact" class="btn btn--ghost header-cta">Parlons de votre projet</a>
+
+    <button class="nav-toggle" id="navToggle" aria-label="Ouvrir le menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
   </div>
+</header>
 
-  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%;"></div></div>
+<main id="top">
 
-  <div id="demo-card"></div>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap hero-inner">
+      <p class="kicker" data-reveal>Agence web sur mesure</p>
+      <h1 data-reveal>Chaque client mérite un site qui n'existe nulle part ailleurs.</h1>
+      <p class="hero-lead" data-reveal>
+        Nonovation accompagne les professionnels dans leur transition
+        vers le web, avec un site personnalisé et unique. <br> Conçu pour vous ressembler,
+        pas pour ressembler à un modèle.
+      </p>
+      <div class="hero-actions" data-reveal>
+        <a href="#contact" class="btn btn--gold">Parlons de votre projet</a>
+        <a href="#demo" class="btn btn--outline">Voir une démo client</a>
+      </div>
+    </div>
+  </section>
 
-  <div class="setup-banner" id="setup-banner">
-    <p>Écris tous tes objectifs du week-end dans les 3 colonnes et valide ta liste.<br>Mais une fois validée, impossible d'en rajouter bahaha alors prends 2 minutes pour tout mettre (et envoie moi une photo que je suive l'épopée).</p><p>Un conseil: tu seras récompensée à chaque objectifs, alors découpe bien en tout petit objectifs, c'est le but loulou </p>
-    <button id="validate-btn">Valider ma liste jeannial</button>
-    <div id="validate-error"></div>
-  </div>
+  <!-- APPROCHE -->
+  <section class="section section--paper" id="approche">
+    <div class="wrap">
+      <p class="kicker" data-reveal>Notre approche</p>
+      <h2 data-reveal>On prend le temps de vous comprendre, avant de coder la moindre ligne.</h2>
+      <p class="section-lead" data-reveal>
+        Pas de modèle recyclé, pas de studio interchangeable. On passe du temps à comprendre
+        qui vous êtes et ce dont vous avez vraiment besoin, pour proposer un rendu unique qui
+        retransmet fidèlement votre identité &mdash; que vous soyez un indépendant qui lance son
+        activité ou une entreprise plus établie qui structure sa présence en ligne.
+      </p>
 
-  <div class="columns">
-    <div class="column">
-      <h3 class="col-title cat-etudes-title">📚 Révisions</h3>
-      <div class="col-list" id="col-etudes"></div>
-      <form class="add-form small" data-cat="etudes">
-        <input type="text" placeholder="+ objectif" autocomplete="off" />
-        <button type="submit">+</button>
+      <div class="pillars">
+        <div class="pillar" data-reveal>
+          <span class="pillar-num">01</span>
+          <h3>Écoute &amp; découverte</h3>
+          <p>On échange avec vous pour cerner vos besoins réels, votre activité et ce qui vous distingue.</p>
+        </div>
+        <div class="pillar" data-reveal>
+          <span class="pillar-num">02</span>
+          <h3>Conception sur mesure</h3>
+          <p>Chaque site est pensé et dessiné pour vous, sans thème préfabriqué ni copier-coller.</p>
+        </div>
+        <div class="pillar" data-reveal>
+          <span class="pillar-num">03</span>
+          <h3>Un accompagnement dans la durée</h3>
+          <p>On reste disponible après la mise en ligne pour faire évoluer votre site avec vous.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section class="section section--ink" id="services">
+    <div class="wrap">
+      <p class="kicker" data-reveal>Ce qu'on fait</p>
+      <h2 data-reveal>Des services pensés pour votre transition vers le web</h2>
+
+      <div class="cards">
+        <div class="card" data-reveal>
+          <span class="card-num">01</span>
+          <h3>Sites vitrines sur mesure</h3>
+          <p>Un site unique, conçu autour de votre identité et de vos besoins réels &mdash; pas un thème préfabriqué.</p>
+        </div>
+        <div class="card" data-reveal>
+          <span class="card-num">02</span>
+          <h3>Accompagnement digital</h3>
+          <p>On vous guide pas à pas dans votre passage au web, à votre rythme et sans jargon inutile.</p>
+        </div>
+        <div class="card" data-reveal>
+          <span class="card-num">03</span>
+          <h3>Identité &amp; présence en ligne</h3>
+          <p>Cohérence visuelle et contenu clair pour exister en ligne d'une manière qui vous ressemble.</p>
+        </div>
+        <div class="card" data-reveal>
+          <span class="card-num">04</span>
+          <h3>Évolution &amp; suivi</h3>
+          <p>Votre site grandit avec vous : mises à jour, ajustements et nouvelles pages au fil du temps.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TARIFS -->
+  <section class="section section--paper" id="tarifs">
+    <div class="wrap">
+      <p class="kicker" data-reveal>Tarifs</p>
+      <h2 data-reveal>Des offres claires, un accompagnement qui ne s'arrête pas à la livraison</h2>
+      <p class="section-lead" data-reveal>
+        Chaque projet reste sur mesure : ces prix sont un point de départ, affiné ensemble
+        lors du devis. Le forfait de suivi mensuel n'est pas de la simple location de serveur
+        &mdash; il couvre le nom de domaine, l'hébergement, les sauvegardes et de petites
+        évolutions régulières.
+      </p>
+
+      <div class="pricing">
+        <div class="price-card" data-reveal>
+          <h3>Essentiel</h3>
+          <p class="price-tag">1 500&nbsp;€ <span>TTC</span></p>
+          <p class="price-desc">Un site one-page sur mesure pour exister en ligne avec clarté.</p>
+          <ul class="price-list">
+            <li>1 page, conçue et rédigée avec vous</li>
+            <li>Design responsive, sur mesure</li>
+            <li>Formulaire de contact</li>
+            <li>Mise en ligne incluse</li>
+          </ul>
+          <p class="price-sub">+ 19&nbsp;€/mois suivi<br><span>domaine, hébergement, sauvegardes, petites retouches</span></p>
+        </div>
+
+        <div class="price-card price-card--featured" data-reveal>
+          <span class="price-badge">Le plus choisi</span>
+          <h3>Signature</h3>
+          <p class="price-tag">2 000 à 4 000&nbsp;€ <span>TTC</span></p>
+          <p class="price-desc">Un site vitrine de 5 à 10 pages, pensé pour développer votre présence.</p>
+          <ul class="price-list">
+            <li>5 à 10 pages sur mesure</li>
+            <li>Arborescence &amp; contenu structurés avec vous</li>
+            <li>Design responsive, identité sur mesure</li>
+            <li>Formulaire de contact, SEO de base</li>
+          </ul>
+          <p class="price-sub">+ 39&nbsp;€/mois suivi<br><span>domaine, hébergement, sauvegardes, petites retouches</span></p>
+        </div>
+
+        <div class="price-card" data-reveal>
+          <h3>Sur mesure</h3>
+          <p class="price-tag">Dès 3 500&nbsp;€ <span>TTC</span></p>
+          <p class="price-desc">Site vitrine avancé ou e-commerce &mdash; fonctionnalités spécifiques, catalogue, paiement en ligne.</p>
+          <ul class="price-list">
+            <li>Périmètre défini ensemble</li>
+            <li>Fonctionnalités avancées (e-commerce, réservation, espace membre...)</li>
+            <li>Accompagnement dédié de bout en bout</li>
+          </ul>
+          <p class="price-sub"><a href="#contact">Discutons de votre projet &rarr;</a></p>
+        </div>
+      </div>
+
+      <p class="demo-note" data-reveal>
+        Délai de réalisation indicatif : 4 à 8 semaines selon le projet. Devis détaillé et
+        conditions complètes dans nos <a href="cgv.html">CGV</a>.
+      </p>
+    </div>
+  </section>
+
+  <!-- DEMO -->
+  <section class="section section--paper" id="demo">
+    <div class="wrap">
+      <p class="kicker" data-reveal>Espace client</p>
+      <h2 data-reveal>Vous êtes déjà client&nbsp;? Découvrez votre site.</h2>
+      <p class="section-lead" data-reveal>
+        Chaque site que nous créons est unique &mdash; et privé. Entrez le code qui vous a été
+        communiqué pour accéder à votre démo.
+      </p>
+
+      <form class="demo-form" id="demoForm" data-reveal autocomplete="off">
+        <label for="demoCode" class="sr-only">Code d'accès</label>
+        <input type="text" id="demoCode" name="demoCode" placeholder="Votre code d'accès" maxlength="40">
+        <button type="submit" class="btn btn--gold">Accéder</button>
       </form>
+      <p class="demo-message" id="demoMessage" role="status" aria-live="polite"></p>
+
+      <p class="demo-note" data-reveal>
+        Pas encore de code&nbsp;? <a href="#contact">Contactez-nous</a> pour démarrer votre projet.
+      </p>
     </div>
-    <div class="column">
-      <h3 class="col-title cat-sport-title">🏃 Sport</h3>
-      <div class="col-list" id="col-sport"></div>
-      <form class="add-form small" data-cat="sport">
-        <input type="text" placeholder="+ objectif" autocomplete="off" />
-        <button type="submit">+</button>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="section section--ink section--contact" id="contact">
+    <div class="wrap">
+      <p class="kicker" data-reveal>Contact</p>
+      <h2 data-reveal>Discutons de votre projet</h2>
+      <p class="section-lead" data-reveal>
+        Que vous ayez déjà une idée précise ou simplement l'envie d'exister enfin en ligne,
+        écrivez-nous : on prend le temps de vous répondre.
+      </p>
+
+      <form class="contact-form" data-reveal action="https://formspree.io/f/xkjnjggo" method="POST">
+        <div class="form-row">
+          <div class="form-field">
+            <label for="contactName">Nom</label>
+            <input type="text" id="contactName" name="name" required>
+          </div>
+          <div class="form-field">
+            <label for="contactEmail">Email</label>
+            <input type="email" id="contactEmail" name="email" required>
+          </div>
+        </div>
+        <div class="form-field">
+          <label for="contactPhone">Téléphone <span>(optionnel)</span></label>
+          <input type="tel" id="contactPhone" name="phone">
+        </div>
+        <div class="form-field">
+          <label for="contactMessage">Votre projet</label>
+          <textarea id="contactMessage" name="message" rows="5" required></textarea>
+        </div>
+        <input type="hidden" name="_subject" value="Nouveau message — site Nonovation">
+
+        <div class="form-footer">
+          <button type="submit" class="btn btn--gold">Envoyer</button>
+          <p class="form-note">
+            Vos informations ne servent qu'à vous répondre. En savoir plus sur la
+            <a href="confidentialite.html">politique de confidentialité</a>.
+          </p>
+        </div>
       </form>
+
+      <div class="contact-actions" data-reveal>
+        <!-- Placeholder : remplacer par la vraie adresse pro une fois créée -->
+        <a href="mailto:contact@nonovation.fr" class="btn btn--outline">Écrire directement à contact@nonovation.fr</a>
+        <a href="https://www.linkedin.com/in/noesengel/" class="btn btn--outline" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
     </div>
-    <div class="column">
-      <h3 class="col-title cat-amour-title">💛 Social / autre</h3>
-      <div class="col-list" id="col-amour"></div>
-      <form class="add-form small" data-cat="amour">
-        <input type="text" placeholder="+ objectif" autocomplete="off" />
-        <button type="submit">+</button>
-      </form>
-    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <img src="identity/02-nonovation-logo-sombre.svg" alt="Nonovation" class="footer-logo">
+    <p>&copy; <span id="year"></span> Nonovation. Sites sur mesure, pensés pour vous.</p>
+    <nav class="footer-legal">
+      <a href="mentions-legales.html">Mentions légales</a>
+      <a href="confidentialite.html">Confidentialité</a>
+      <a href="cgv.html">CGV</a>
+    </nav>
   </div>
+</footer>
 
-  <div class="banner-photo" id="banner-photo" style="display:none;">
-    Oublie pas la photo de tes objectifs jeannial
-  </div>
-</div>
-
-<div id="modal-root"></div>
-
-<script type="module" src="app.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>

@@ -1,0 +1,54 @@
+<svg width="1000" height="700" viewBox="0 0 1000 700" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .kicker { font-family: 'Space Grotesk', 'Archivo', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 5px; fill: #8B8C99; text-transform: uppercase; }
+      .label { font-family: 'Space Grotesk', 'Archivo', sans-serif; font-weight: 600; font-size: 18px; fill: #161A33; }
+      .hex { font-family: 'Space Grotesk', 'Archivo', monospace; font-weight: 400; font-size: 15px; fill: #6C6D7A; }
+      .note { font-family: 'Space Grotesk', 'Archivo', sans-serif; font-weight: 400; font-size: 16px; fill: #6C6D7A; }
+      .divider { stroke: #E4E3E8; stroke-width: 1.5; }
+    </style>
+  </defs>
+  <rect width="1000" height="700" fill="#FFFFFF"/>
+
+  <text x="60" y="60" class="kicker">IDENTITÉ VISUELLE</text>
+  <text x="60" y="100" font-family="'Space Grotesk','Archivo',sans-serif" font-weight="800" font-size="56" fill="#161A33">Nonovation</text>
+
+  <line x1="60" y1="140" x2="940" y2="140" class="divider"/>
+
+  <!-- Wordmark de référence -->
+  <g font-family="'Space Grotesk','Archivo',sans-serif" font-weight="800" font-size="72">
+    <text x="60" y="240" textLength="52" lengthAdjust="spacingAndGlyphs" fill="#161A33">N</text>
+    <text x="112" y="240" textLength="52" lengthAdjust="spacingAndGlyphs" fill="#161A33">O</text>
+    <text x="164" y="240" textLength="52" lengthAdjust="spacingAndGlyphs" fill="#161A33">И</text>
+    <text x="216" y="240" textLength="52" lengthAdjust="spacingAndGlyphs" fill="#161A33">O</text>
+    <text x="268" y="240" textLength="260" lengthAdjust="spacingAndGlyphs" fill="#C9972E">VATION</text>
+  </g>
+
+  <line x1="60" y1="280" x2="940" y2="280" class="divider"/>
+
+  <!-- Palette -->
+  <text x="60" y="325" class="label">Palette</text>
+  <rect x="60" y="345" width="90" height="90" rx="14" fill="#161A33"/>
+  <text x="60" y="460" class="label">Encre</text>
+  <text x="60" y="482" class="hex">#161A33</text>
+
+  <rect x="200" y="345" width="90" height="90" rx="14" fill="#C9972E"/>
+  <text x="200" y="460" class="label">Or</text>
+  <text x="200" y="482" class="hex">#C9972E</text>
+
+  <rect x="340" y="345" width="90" height="90" rx="14" fill="#F5F2EC" stroke="#E4E3E8" stroke-width="1.5"/>
+  <text x="340" y="460" class="label">Papier</text>
+  <text x="340" y="482" class="hex">#F5F2EC</text>
+
+  <line x1="60" y1="520" x2="940" y2="520" class="divider"/>
+
+  <!-- Typographie -->
+  <text x="60" y="565" class="label">Typographie</text>
+  <text x="60" y="600" font-family="'Space Grotesk','Archivo',sans-serif" font-weight="800" font-size="28" fill="#161A33">Space Grotesk — Bold 800</text>
+  <text x="60" y="630" class="note">Le И cyrillique remplace le second N de "NONO" — un clin d'œil visuel qui</text>
+  <text x="60" y="654" class="note">reste dans la même police, sans dessin sur mesure.</text>
+
+  <text x="600" y="600" class="note">Usage :</text>
+  <text x="600" y="628" class="note">"NONO" + И → encre #161A33</text>
+  <text x="600" y="652" class="note">"VATION" → or #C9972E</text>
+</svg>
