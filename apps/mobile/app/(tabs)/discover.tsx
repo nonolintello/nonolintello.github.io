@@ -32,7 +32,8 @@ const SECTIONS: { value: Section; label: string }[] = [
 ];
 
 export default function DiscoverScreen() {
-  const { me, suggested, content, clubs, events, routes, challenges, repository, unreadCount } = useApp();
+  const { me, suggested, content, clubs, events, raceEntries, routes, challenges, repository, unreadCount } =
+    useApp();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const unit = me.unitPreference;
@@ -50,6 +51,16 @@ export default function DiscoverScreen() {
   };
 
   const cardWidth = width - space.lg * 2;
+
+  // Who from MOOV is on each start list, so an event card can say "4 from
+  // MOOV · you're in" without every card filtering the full entry list.
+  const entriesByEvent = new Map<string, { count: number; mine: boolean }>();
+  for (const entry of raceEntries) {
+    const current = entriesByEvent.get(entry.eventId) ?? { count: 0, mine: false };
+    current.count += 1;
+    if (entry.athleteId === me.id) current.mine = true;
+    entriesByEvent.set(entry.eventId, current);
+  }
 
   const ContentCard = ({ item, wide = false }: { item: (typeof content)[number]; wide?: boolean }) => (
     <Card padded={false} style={{ width: wide ? cardWidth : 176 }}>
@@ -209,7 +220,13 @@ export default function DiscoverScreen() {
             <Card padded={false}>
               {events.slice(0, 3).map((e, i) => (
                 <View key={e.id}>
-                  <Row style={{ padding: space.lg, paddingVertical: space.md }}>
+                  <Pressable
+                    onPress={() => router.push(`/event/${e.id}`)}
+                    style={({ pressed }) => [
+                      { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg, paddingVertical: space.md },
+                      pressed && { opacity: 0.7 },
+                    ]}
+                  >
                     <View
                       style={{
                         width: 44,
@@ -232,7 +249,9 @@ export default function DiscoverScreen() {
                         {e.location}
                       </Caption>
                     </View>
-                  </Row>
+                    <EntryBadge summary={entriesByEvent.get(e.id)} />
+                    <Icon name="chevronRight" size={16} color={colors.textTertiary} />
+                  </Pressable>
                   {i < 2 ? <Divider /> : null}
                 </View>
               ))}
@@ -328,7 +347,7 @@ export default function DiscoverScreen() {
       {section === 'events' ? (
         <View style={{ paddingHorizontal: space.lg, gap: space.md }}>
           {events.map((e) => (
-            <Card key={e.id}>
+            <Card key={e.id} onPress={() => router.push(`/event/${e.id}`)}>
               <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <View style={{ flex: 1 }}>
                   <Row gap={space.sm}>
@@ -346,6 +365,12 @@ export default function DiscoverScreen() {
                       {e.participantCount.toLocaleString()} entered
                     </Caption>
                   ) : null}
+                  <Row gap={space.sm} style={{ marginTop: space.sm }}>
+                    <EntryBadge summary={entriesByEvent.get(e.id)} />
+                    <Caption style={{ fontSize: 12, color: colors.accent, fontWeight: '600' }}>
+                      See who's racing
+                    </Caption>
+                  </Row>
                 </View>
                 <View style={{ alignItems: 'center' }}>
                   <Text style={[type.label, { color: colors.accent, fontSize: 9.5 }]}>
@@ -477,3 +502,16 @@ const AthleteRow = ({
     </Row>
   </Pressable>
 );
+
+/** "4 from MOOV" with a green tick once the demo athlete is on the list. */
+const EntryBadge = ({ summary }: { summary?: { count: number; mine: boolean } }) => {
+  if (!summary || summary.count === 0) return null;
+  return (
+    <Pill
+      tone={summary.mine ? 'success' : 'neutral'}
+      icon={summary.mine ? <Icon name="check" size={11} color={colors.success} /> : undefined}
+    >
+      {summary.mine ? `You + ${summary.count - 1} from MOOV` : `${summary.count} from MOOV`}
+    </Pill>
+  );
+};

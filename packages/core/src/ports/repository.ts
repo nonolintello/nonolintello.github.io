@@ -7,6 +7,7 @@ import type {
   Goal,
   PlannedWorkout,
   Race,
+  RaceEntry,
   TrainingBlock,
 } from '../domain/types';
 
@@ -39,6 +40,12 @@ export interface AthleteRepository {
   /** Planned sessions, past and upcoming. */
   getPlan(athleteId: string): Promise<PlannedWorkout[]>;
   getRaces(athleteId: string): Promise<Race[]>;
+
+  /** Every MOOV athlete entered in every event. Small enough to hold whole. */
+  getRaceEntries(): Promise<RaceEntry[]>;
+  /** Creates or updates the current athlete's entry for an event. */
+  registerForEvent(eventId: string, expectedSeconds?: number): Promise<RaceEntry>;
+  withdrawFromEvent(eventId: string): Promise<void>;
   getCurrentBlock(athleteId: string): Promise<TrainingBlock | null>;
 
   getChallenges(): Promise<Challenge[]>;

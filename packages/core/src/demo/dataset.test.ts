@@ -102,3 +102,43 @@ describe('rule-based insights over the demo athlete', () => {
     }
   });
 });
+
+describe('race entries', () => {
+  it('registers the demo athlete for every race on their calendar', () => {
+    for (const race of dataset.races) {
+      const entry = dataset.raceEntries.find(
+        (e) => e.eventId === race.eventId && e.athleteId === dataset.me.id,
+      );
+      expect(entry).toBeDefined();
+      expect(entry?.expectedSeconds).toBe(race.goalSeconds);
+    }
+  });
+
+  it('only enters athletes into events that exist, once each', () => {
+    const eventIds = new Set(dataset.events.map((e) => e.id));
+    const seen = new Set<string>();
+    for (const entry of dataset.raceEntries) {
+      expect(eventIds.has(entry.eventId)).toBe(true);
+      const key = `${entry.eventId}:${entry.athleteId}`;
+      expect(seen.has(key)).toBe(false);
+      seen.add(key);
+    }
+  });
+
+  it('gives friends expected times that scale with distance', () => {
+    const marathon = dataset.raceEntries.filter(
+      (e) => e.eventId === 'event-philly-marathon' && e.expectedSeconds,
+    );
+    const eightK = dataset.raceEntries.filter((e) => e.eventId === 'event-rothman-8k' && e.expectedSeconds);
+    expect(marathon.length).toBeGreaterThan(0);
+    expect(eightK.length).toBeGreaterThan(0);
+    for (const e of marathon) {
+      expect(e.expectedSeconds).toBeGreaterThan(2 * 3600);
+      expect(e.expectedSeconds).toBeLessThan(6 * 3600);
+    }
+    for (const e of eightK) {
+      expect(e.expectedSeconds).toBeGreaterThan(20 * 60);
+      expect(e.expectedSeconds).toBeLessThan(60 * 60);
+    }
+  });
+});

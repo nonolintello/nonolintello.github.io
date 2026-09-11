@@ -12,6 +12,7 @@ import type {
   ContentItem,
   LeaderboardEntry,
   Race,
+  RaceEntry,
   RouteSuggestion,
   SportEvent,
   TrainingBlock,
@@ -20,7 +21,7 @@ import type {
 } from '../domain/types';
 import { prDistanceLabel, WORKOUT_LABELS } from '../domain/types';
 import { addDays, daysBetween, startOfDay, startOfWeek, toISODate } from '../analytics/time';
-import { currentRecords } from '../analytics/bestEfforts';
+import { currentRecords, predictRaceTime } from '../analytics/bestEfforts';
 import { distanceIn, distanceLabel, formatDuration } from '../domain/units';
 import { clamp } from '../analytics/stats';
 import { chance, gaussian, intRange, mulberry32, phasesFor, pick, range, smoothNoise, type Rng } from './random';
@@ -37,6 +38,7 @@ export interface DemoDataset {
   comments: Comment[];
   plan: PlannedWorkout[];
   races: Race[];
+  raceEntries: RaceEntry[];
   block: TrainingBlock;
   wellness: WellnessDay[];
   objectives: AthleteGoal[];
@@ -310,6 +312,7 @@ const generateRaces = (now: Date, athleteId: string): Race[] => [
     distanceM: 8000,
     location: 'Philadelphia, PA',
     goalSeconds: 32 * 60 + 30,
+    eventId: 'event-rothman-8k',
   },
   {
     id: 'race-tuneup-half',
@@ -319,6 +322,7 @@ const generateRaces = (now: Date, athleteId: string): Race[] => [
     distanceM: 21097,
     location: 'Philadelphia, PA',
     goalSeconds: 85 * 60,
+    eventId: 'event-philly-half',
   },
   {
     id: 'race-philly-marathon',
@@ -329,8 +333,74 @@ const generateRaces = (now: Date, athleteId: string): Race[] => [
     location: 'Philadelphia, PA',
     goalSeconds: 3 * 3600 - 1,
     isGoalRace: true,
+    eventId: 'event-philly-marathon',
   },
 ];
+
+/**
+ * Who from the seed set has entered which public event, and what they say
+ * they're aiming for.
+ *
+ * Expected times come from each friend's 5K speed projected with Riegel, then
+ * rounded to the kind of number people actually type ("1:35", not
+ * "1:34:47") and nudged: some athletes sandbag, some are optimistic. The demo
+ * athlete's own entries mirror their race calendar so the two never disagree.
+ */
+const generateRaceEntries = (
+  rng: Rng,
+  now: Date,
+  me: Athlete,
+  races: readonly Race[],
+  eventList: readonly SportEvent[],
+): RaceEntry[] => {
+  const entries: RaceEntry[] = [];
+
+  for (const race of races) {
+    if (!race.eventId) continue;
+    entries.push({
+      id: `entry-${race.eventId}-${me.id}`,
+      eventId: race.eventId,
+      athleteId: me.id,
+      expectedSeconds: race.goalSeconds,
+      registeredAt: addDays(now, -intRange(rng, 20, 90)).toISOString(),
+    });
+  }
+
+  for (const event of eventList) {
+    if (!event.distanceM) continue;
+    const isLong = event.distanceM >= 21000;
+    for (const seed of FRIEND_SEEDS) {
+      // Trail runners chase the trail series; high-mileage athletes are far
+      // more likely to have a marathon on the calendar than a local 8K.
+      const affinity =
+        event.kind === 'competition'
+          ? seed.hilly * 0.9
+          : isLong
+            ? clamp(seed.weeklyKm / 80, 0.45, 0.92)
+            : 0.55;
+      if (!chance(rng, affinity)) continue;
+
+      const fiveKSeconds = 5000 / seed.speed;
+      const projected = predictRaceTime(5000, fiveKSeconds, event.distanceM).predictedSeconds;
+      // Trail races are slower than the road projection says.
+      const terrain = event.kind === 'competition' ? 1.12 : 1;
+      const attitude = 1 + gaussian(rng, 0.01, 0.03);
+      const rounding = isLong ? 300 : 30;
+      const expectedSeconds = Math.round((projected * terrain * attitude) / rounding) * rounding;
+
+      entries.push({
+        id: `entry-${event.id}-${seed.id}`,
+        eventId: event.id,
+        athleteId: seed.id,
+        // A few people register without committing to a number.
+        expectedSeconds: chance(rng, 0.15) ? undefined : expectedSeconds,
+        registeredAt: addDays(now, -intRange(rng, 3, 120)).toISOString(),
+      });
+    }
+  }
+
+  return entries;
+};
 
 const HOME = { lat: 39.9526, lon: -75.1652 }; // Philadelphia — river flats plus Fairmount hills.
 
@@ -524,6 +594,8 @@ export const generateDemoDataset = (now: Date = new Date(), seed = 20260910): De
   const comments = generateComments(rng, [...activities, ...friendActivities], friends, now);
   const plan = generatePlan(rng, now, activities, me.id);
   const races = generateRaces(now, me.id);
+  const eventList = events(now);
+  const raceEntries = generateRaceEntries(rng, now, me, races, eventList);
   const wellness = generateWellness(rng, now, activities, me);
   const objectives = generateObjectives(now, me.id);
   const leaderboards = generateLeaderboards(rng, me, friends);
@@ -549,6 +621,7 @@ export const generateDemoDataset = (now: Date = new Date(), seed = 20260910): De
     comments,
     plan,
     races,
+    raceEntries,
     block,
     wellness,
     objectives,
@@ -560,7 +633,7 @@ export const generateDemoDataset = (now: Date = new Date(), seed = 20260910): De
     ),
     content: CONTENT,
     clubs: CLUBS,
-    events: events(now),
+    events: eventList,
     routes: routes(rng),
     leaderboards,
   };

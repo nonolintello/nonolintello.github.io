@@ -289,6 +289,8 @@ export interface Race {
   goalSeconds?: number;
   /** The race the current block is built around. */
   isGoalRace?: boolean;
+  /** The public SportEvent this personal race calendar entry corresponds to. */
+  eventId?: string;
 }
 
 /**
@@ -388,6 +390,22 @@ export interface SportEvent {
   distanceM?: number;
   kind: 'race' | 'competition' | 'local';
   participantCount?: number;
+}
+
+/**
+ * A MOOV athlete's registration in a SportEvent.
+ *
+ * The expected time is what the athlete declares they are aiming for — a
+ * statement of intent, not a projection. The engine's prediction lives on the
+ * profile so the two can be shown side by side without being confused.
+ */
+export interface RaceEntry {
+  id: string;
+  eventId: string;
+  athleteId: string;
+  /** Declared target finish time in seconds. */
+  expectedSeconds?: number;
+  registeredAt: string;
 }
 
 export interface RouteSuggestion {

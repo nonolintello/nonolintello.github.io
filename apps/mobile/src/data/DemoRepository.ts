@@ -14,6 +14,7 @@ import {
   type NewActivityInput,
   type PlannedWorkout,
   type Race,
+  type RaceEntry,
   type TrainingBlock,
 } from '@ai/core';
 
@@ -139,6 +140,35 @@ export class DemoRepository implements AthleteRepository {
     return this.data.races
       .filter((r) => r.athleteId === athleteId)
       .sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  async getRaceEntries(): Promise<RaceEntry[]> {
+    return this.data.raceEntries;
+  }
+
+  async registerForEvent(eventId: string, expectedSeconds?: number): Promise<RaceEntry> {
+    const existing = this.data.raceEntries.find(
+      (e) => e.eventId === eventId && e.athleteId === this.data.me.id,
+    );
+    if (existing) {
+      existing.expectedSeconds = expectedSeconds;
+      return existing;
+    }
+    const entry: RaceEntry = {
+      id: `entry-new-${this.nextId++}`,
+      eventId,
+      athleteId: this.data.me.id,
+      expectedSeconds,
+      registeredAt: new Date().toISOString(),
+    };
+    this.data.raceEntries.push(entry);
+    return entry;
+  }
+
+  async withdrawFromEvent(eventId: string): Promise<void> {
+    this.data.raceEntries = this.data.raceEntries.filter(
+      (e) => !(e.eventId === eventId && e.athleteId === this.data.me.id),
+    );
   }
 
   async getCurrentBlock(athleteId: string): Promise<TrainingBlock | null> {

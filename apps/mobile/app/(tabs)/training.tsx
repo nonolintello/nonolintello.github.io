@@ -55,7 +55,7 @@ const workoutTone = (t: WorkoutType) =>
   t === 'race' ? colors.accent : isQualityWorkout(t) ? colors.warn : t === 'rest' ? colors.textTertiary : colors.cyan;
 
 export default function TrainingScreen() {
-  const { me, profile, plan, races, block, activityById, unreadCount } = useApp();
+  const { me, profile, plan, races, raceEntries, block, activityById, unreadCount } = useApp();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const unit = me.unitPreference;
@@ -730,6 +730,13 @@ export default function TrainingScreen() {
                       </Body>
                     </Row>
                   ) : null}
+
+                  {r.race.eventId ? (
+                    <StartListLink
+                      count={raceEntries.filter((e) => e.eventId === r.race.eventId && e.athleteId !== me.id).length}
+                      onPress={() => router.push(`/event/${r.race.eventId}`)}
+                    />
+                  ) : null}
                 </Card>
               ))}
             </View>
@@ -745,6 +752,26 @@ export default function TrainingScreen() {
     </Screen>
   );
 }
+
+/** Who else from MOOV is on this start list — the social half of a race card. */
+const StartListLink = ({ count, onPress }: { count: number; onPress: () => void }) => (
+  <Pressable onPress={onPress} style={({ pressed }) => [{ marginTop: space.lg }, pressed && { opacity: 0.7 }]}>
+    <Row style={{ justifyContent: 'space-between' }}>
+      <Row gap={space.sm}>
+        <Icon name="community" size={14} color={colors.cyan} />
+        <Caption style={{ color: colors.textSecondary }}>
+          {count === 0
+            ? 'Nobody else from MOOV yet'
+            : `${count} ${count === 1 ? 'other' : 'others'} from MOOV racing`}
+        </Caption>
+      </Row>
+      <Row gap={4}>
+        <Caption style={{ color: colors.accent, fontWeight: '700' }}>Start list</Caption>
+        <Icon name="chevronRight" size={14} color={colors.accent} />
+      </Row>
+    </Row>
+  </Pressable>
+);
 
 const SegmentedTabs = <T extends string>({
   value,

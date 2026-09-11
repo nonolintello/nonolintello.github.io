@@ -21,6 +21,7 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="activity/[id]" options={{ animation: 'slide_from_bottom' }} />
             <Stack.Screen name="profile/[id]" />
+            <Stack.Screen name="event/[id]" />
             {/* Actions and global surfaces arrive as sheets, not destinations. */}
             <Stack.Screen name="log" options={{ animation: 'slide_from_bottom' }} />
             <Stack.Screen name="notifications" options={{ animation: 'slide_from_bottom' }} />

@@ -22,6 +22,7 @@ import {
   type NewActivityInput,
   type PlannedWorkout,
   type Race,
+  type RaceEntry,
   type TrainingBlock,
   type AppNotification,
   type AthleteGoal,
@@ -54,6 +55,8 @@ interface AppState {
   content: ContentItem[];
   clubs: Club[];
   events: SportEvent[];
+  /** Every MOOV registration across every event, mine included. */
+  raceEntries: RaceEntry[];
   routes: RouteSuggestion[];
   leaderboards: Record<string, LeaderboardEntry[]>;
   markNotificationsRead(): void;
@@ -66,6 +69,8 @@ interface AppState {
   addComment(activityId: string, body: string): Promise<void>;
   createActivity(input: NewActivityInput): Promise<Activity>;
   setGoal(goal: Omit<Goal, 'id'>): Promise<void>;
+  registerForEvent(eventId: string, expectedSeconds?: number): Promise<void>;
+  withdrawFromEvent(eventId: string): Promise<void>;
   loadMoreFeed(): Promise<void>;
   activityById(id: string): Activity | undefined;
   athleteById(id: string): Athlete | undefined;
@@ -103,6 +108,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [content, setContent] = useState<ContentItem[]>([]);
   const [clubs, setClubs] = useState<Club[]>([]);
   const [events, setEvents] = useState<SportEvent[]>([]);
+  const [raceEntries, setRaceEntries] = useState<RaceEntry[]>([]);
   const [routes, setRoutes] = useState<RouteSuggestion[]>([]);
   const [leaderboards, setLeaderboards] = useState<Record<string, LeaderboardEntry[]>>({});
 
@@ -127,7 +133,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setRaces(upcoming);
       setBlock(currentBlock);
 
-      const [wellnessDays, objectiveList, notifs, contentList, clubList, eventList, routeList, friendBoard, clubBoard] =
+      const [wellnessDays, objectiveList, notifs, contentList, clubList, eventList, entryList, routeList, friendBoard, clubBoard] =
         await Promise.all([
           repository.getWellness(athlete.id),
           repository.getObjectives(athlete.id),
@@ -135,6 +141,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           repository.getContent(),
           repository.getClubs(),
           repository.getEvents(),
+          repository.getRaceEntries(),
           repository.getRoutes(),
           repository.getLeaderboard('friends'),
           repository.getLeaderboard('club'),
@@ -146,6 +153,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setContent(contentList);
       setClubs(clubList);
       setEvents(eventList);
+      setRaceEntries(entryList);
       setRoutes(routeList);
       setLeaderboards({ friends: friendBoard, club: clubBoard });
       setMe(athlete);
@@ -231,6 +239,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     [repository],
   );
 
+  const registerForEvent = useCallback(
+    async (eventId: string, expectedSeconds?: number) => {
+      await repository.registerForEvent(eventId, expectedSeconds);
+      setRaceEntries(await repository.getRaceEntries());
+    },
+    [repository],
+  );
+
+  const withdrawFromEvent = useCallback(
+    async (eventId: string) => {
+      await repository.withdrawFromEvent(eventId);
+      setRaceEntries(await repository.getRaceEntries());
+    },
+    [repository],
+  );
+
   const loadMoreFeed = useCallback(async () => {
     if (!feedCursor) return;
     const page = await repository.getFeed(feedCursor);
@@ -278,6 +302,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       content,
       clubs,
       events,
+      raceEntries,
       routes,
       leaderboards,
       markNotificationsRead,
@@ -288,6 +313,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       addComment,
       createActivity,
       setGoal,
+      registerForEvent,
+      withdrawFromEvent,
       loadMoreFeed,
       activityById,
       athleteById,
@@ -309,6 +336,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     content,
     clubs,
     events,
+    raceEntries,
     routes,
     leaderboards,
     markNotificationsRead,
@@ -319,6 +347,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     addComment,
     createActivity,
     setGoal,
+    registerForEvent,
+    withdrawFromEvent,
     loadMoreFeed,
     activityById,
     athleteById,
