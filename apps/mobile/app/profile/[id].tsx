@@ -9,6 +9,8 @@ import {
   elevationLabel,
   formatDuration,
   formatDurationCompact,
+  formatPace,
+  paceSecondsPerUnit,
   prDistanceLabel,
   relativeDayLabel,
   type Athlete,
@@ -90,7 +92,7 @@ export default function ProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const { me, profile: myProfile, repository, athleteById } = useApp();
+  const { me, profile: myProfile, repository, athleteById, events, raceEntries } = useApp();
 
   const athleteId = String(id);
   const isMe = athleteId === me.id;
@@ -133,6 +135,20 @@ export default function ProfileScreen() {
 
   const unit = me.unitPreference;
   const badges = badgesFor(profile);
+
+  // This athlete's start-list entries joined to their events, soonest first.
+  // Past events drop off: a profile shows what someone is building toward.
+  const today = new Date().toISOString().slice(0, 10);
+  const upcoming = raceEntries
+    .filter((e) => e.athleteId === athleteId)
+    .flatMap((entry) => {
+      const event = events.find((ev) => ev.id === entry.eventId);
+      return event && event.date >= today ? [{ entry, event }] : [];
+    })
+    .sort((a, b) => a.event.date.localeCompare(b.event.date));
+  const racingWithMe = new Set(
+    raceEntries.filter((e) => e.athleteId === me.id).map((e) => e.eventId),
+  );
 
   return (
     <Screen contentStyle={{ paddingHorizontal: space.lg, gap: space.xl }}>
@@ -232,6 +248,71 @@ export default function ProfileScreen() {
           />
         </Row>
       </Card>
+
+      {/* Upcoming races ---------------------------------------------------- */}
+      {upcoming.length > 0 ? (
+        <View>
+          <SectionHeader title="Next races" />
+          <Card padded={false}>
+            {upcoming.map(({ entry, event }, i) => {
+              const date = new Date(`${event.date}T00:00:00`);
+              const others = raceEntries.filter(
+                (e) => e.eventId === event.id && e.athleteId !== athleteId,
+              ).length;
+              return (
+                <View key={entry.id}>
+                  <Pressable
+                    onPress={() => router.push(`/event/${event.id}`)}
+                    style={({ pressed }) => [
+                      { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg, paddingVertical: space.md },
+                      pressed && { opacity: 0.7 },
+                    ]}
+                  >
+                    <View style={{ width: 44, alignItems: 'center' }}>
+                      <Text style={[type.label, { color: colors.accent, fontSize: 9.5 }]}>
+                        {date.toLocaleDateString(undefined, { month: 'short' }).toUpperCase()}
+                      </Text>
+                      <Text style={[type.metricSmall, { fontSize: 18 }]}>{date.getDate()}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={type.bodyStrong} numberOfLines={1}>
+                        {event.name}
+                      </Text>
+                      <Caption style={{ fontSize: 12, marginTop: 2 }} numberOfLines={1}>
+                        {event.distanceM ? `${prDistanceLabel(event.distanceM)} · ` : ''}
+                        {!isMe && racingWithMe.has(event.id)
+                          ? "You're racing this too"
+                          : others > 0
+                            ? `${others} ${others === 1 ? 'other' : 'others'} from MOOV`
+                            : event.location}
+                      </Caption>
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      {entry.expectedSeconds != null ? (
+                        <>
+                          <Text style={[type.metricSmall, { fontSize: 17 }]}>
+                            {formatDuration(entry.expectedSeconds)}
+                          </Text>
+                          {event.distanceM ? (
+                            <Caption style={{ fontSize: 11, color: colors.textTertiary }}>
+                              {formatPace(paceSecondsPerUnit(event.distanceM, entry.expectedSeconds, unit))} /
+                              {distanceLabel(unit)}
+                            </Caption>
+                          ) : null}
+                        </>
+                      ) : (
+                        <Caption style={{ fontSize: 12, color: colors.textTertiary }}>No target</Caption>
+                      )}
+                    </View>
+                    <Icon name="chevronRight" size={16} color={colors.textTertiary} />
+                  </Pressable>
+                  {i < upcoming.length - 1 ? <Divider /> : null}
+                </View>
+              );
+            })}
+          </Card>
+        </View>
+      ) : null}
 
       {/* Athlete score ----------------------------------------------------- */}
       <View>
