@@ -1,0 +1,26 @@
+{
+  "name": "athlete-intelligence",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "core:build": "npm run build -w @ai/core",
+    "core:test": "npm run test -w @ai/core",
+    "typecheck": "npm run typecheck -w @ai/core && npm run typecheck -w @ai/mobile",
+    "mobile": "npm run start -w @ai/mobile",
+    "mobile:web": "npm run web -w @ai/mobile",
+    "mobile:ios": "npm run ios -w @ai/mobile",
+    "test": "npm run test -w @ai/core"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0",
+    "typescript": "^5.6.3"
+  },
+  "//": "Expo SDK 57's metro config resolves react-native/rn-get-polyfills, which 0.87 removed. Transitive deps pull 0.87 in, producing two copies and a broken bundle, so the whole tree is pinned to the SDK's version.",
+  "overrides": {
+    "react-native": "0.86.3"
+  }
+}
