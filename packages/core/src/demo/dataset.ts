@@ -395,8 +395,8 @@ export const generateDemoDataset = (now: Date = new Date(), seed = 20260910): De
 
   const me: Athlete = {
     id: 'athlete-me',
-    handle: 'davidhart',
-    displayName: 'David Hart',
+    handle: 'davidlitvin',
+    displayName: 'David Litvin',
     bio: 'Chasing sub-3 in Philadelphia. Kelly Drive most mornings.',
     location: 'Philadelphia, PA',
     birthDate: '1992-03-18',
