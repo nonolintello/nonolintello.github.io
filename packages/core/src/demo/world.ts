@@ -148,6 +148,47 @@ const courseShape = (seed: number, distanceM: number, origin: { lat: number; lon
   return { lat, lon };
 };
 
+/**
+ * The Philadelphia Marathon course, traced from the official course map:
+ * out from the Art Museum through Old City and the river wards, west past
+ * Penn, up through Fairmount Park to the half, then the long out-and-back
+ * along Kelly Drive to Manayunk and home along the river.
+ *
+ * Traced in map pixels (1280 × 1508) and projected onto a plausible lat/lon
+ * box so it renders through the same path as any GPS course.
+ */
+const PHILLY_MARATHON_PIXELS: readonly [number, number][] = [
+  [720, 1000], [745, 1035], [790, 1100], [890, 1122], [1030, 1148], [1035, 1130], [1120, 1130],
+  [1118, 1200], [1116, 1300], [1112, 1400], [1105, 1455], [1065, 1450], [1062, 1370], [1060, 1312],
+  [978, 1318], [978, 1250], [980, 1215], [900, 1213], [860, 1212], [760, 1190], [650, 1185],
+  [612, 1160], [525, 1160], [525, 1090], [535, 1040], [525, 960], [520, 900], [490, 860],
+  [470, 845], [440, 812], [400, 800], [330, 790], [300, 790], [250, 770], [215, 720], [200, 705],
+  [230, 690], [285, 685], [320, 715], [360, 760], [385, 790], [455, 808], [495, 800], [545, 800],
+  [580, 765], [560, 720], [520, 700], [500, 670], [515, 650], [500, 610], [520, 578], [545, 590],
+  [540, 620], [505, 660], [470, 690], [430, 700], [455, 645], [505, 585], [540, 530], [545, 470],
+  [540, 420], [520, 370], [485, 300], [430, 275], [390, 240], [330, 200], [270, 150], [230, 110],
+  [205, 75], [165, 75], [190, 100], [245, 175], [300, 215], [340, 250], [400, 290], [450, 335],
+  [500, 400], [530, 465], [512, 490], [470, 560], [420, 625], [440, 690], [480, 740], [500, 765],
+  [530, 800], [545, 830], [600, 880], [650, 910], [670, 935], [700, 965],
+];
+
+const tracedCourse = (pixels: readonly [number, number][], origin: { lat: number; lon: number }) => {
+  // One map pixel ≈ 9 m at this zoom; the same scale on both axes keeps the
+  // traced proportions once the renderer applies its longitude correction.
+  const metresPerPixel = 9;
+  const metresPerDegLat = 111_320;
+  const metresPerDegLon = metresPerDegLat * Math.cos((origin.lat * Math.PI) / 180);
+  const cx = 640;
+  const cy = 754;
+  const lat: number[] = [];
+  const lon: number[] = [];
+  for (const [x, y] of pixels) {
+    lat.push(origin.lat - ((y - cy) * metresPerPixel) / metresPerDegLat);
+    lon.push(origin.lon + ((x - cx) * metresPerPixel) / metresPerDegLon);
+  }
+  return { lat, lon };
+};
+
 export const events = (now: Date): SportEvent[] => [
   {
     id: 'event-philly-marathon',
@@ -157,7 +198,7 @@ export const events = (now: Date): SportEvent[] => [
     distanceM: 42195,
     kind: 'race',
     participantCount: 12400,
-    course: courseShape(42195, 42195, PHILLY),
+    course: tracedCourse(PHILLY_MARATHON_PIXELS, PHILLY),
   },
   {
     id: 'event-broad-street',

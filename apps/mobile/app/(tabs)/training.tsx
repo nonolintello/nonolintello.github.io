@@ -154,9 +154,13 @@ export default function TrainingScreen() {
             <RoadmapMap
               roadmap={roadmap}
               width={width - space.lg * 2}
-              height={Math.min(320, (width - space.lg * 2) * 0.9)}
+              height={Math.min(480, (width - space.lg * 2) * 1.3)}
               selectedId={focusCheckpoint?.id ?? null}
+              onSelect={setSelectedCheckpoint}
             />
+            <Caption style={{ textAlign: 'center', fontSize: 11, color: colors.textTertiary, marginTop: -4, marginBottom: space.sm }}>
+              Tap a checkpoint on the course
+            </Caption>
 
             <Divider />
             <Row style={{ padding: space.lg, paddingVertical: space.md, justifyContent: 'space-between' }}>
