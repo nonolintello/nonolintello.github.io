@@ -1,8 +1,9 @@
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, type IconName } from '../../src/components/Icon';
-import { colors, hairline, radius, space, type } from '../../src/theme/tokens';
+import { useApp } from '../../src/data/store';
+import { colors, hairline, radius, shadow, space, type } from '../../src/theme/tokens';
 
 /**
  * Understand me · Improve me · Connect me · Inspire me.
@@ -97,13 +98,62 @@ const TabBar = ({ state, navigation }: TabBarProps) => {
   );
 };
 
+/**
+ * Demo shortcut into the other side of the platform. Signs in the demo coach
+ * (Priya already coaches two athletes) and slides to her dashboard, so a walk
+ * through never has to find the entry on the profile screen.
+ */
+const CoachDemoButton = () => {
+  const router = useRouter();
+  const { coach, signInCoach } = useApp();
+  const insets = useSafeAreaInsets();
+
+  const open = async () => {
+    if (!coach) await signInCoach({ email: 'priya@moov.coach' });
+    router.push('/coach');
+  };
+
+  return (
+    <Pressable
+      onPress={open}
+      accessibilityRole="button"
+      accessibilityLabel="Open coach view"
+      style={({ pressed }) => ({
+        position: 'absolute',
+        right: space.lg,
+        // Sits just above the tab bar, clear of the tabs' touch area.
+        bottom: Math.max(insets.bottom, space.md) + 66,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingLeft: space.md,
+        paddingRight: space.sm,
+        paddingVertical: 8,
+        borderRadius: radius.pill,
+        backgroundColor: colors.bgElevated,
+        borderWidth: hairline,
+        borderColor: colors.cyanSoft,
+        opacity: pressed ? 0.75 : 1,
+        ...shadow,
+      })}
+    >
+      <Icon name="community" size={14} color={colors.cyan} />
+      <Text style={[type.label, { color: colors.cyan, fontSize: 9.5 }]}>Coach view</Text>
+      <Icon name="chevronRight" size={13} color={colors.cyan} />
+    </Pressable>
+  );
+};
+
 export default function TabsLayout() {
   return (
-    <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} />}>
-      <Tabs.Screen name="index" />
-      <Tabs.Screen name="journey" />
-      <Tabs.Screen name="community" />
-      <Tabs.Screen name="discover" />
-    </Tabs>
+    <View style={{ flex: 1 }}>
+      <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} />}>
+        <Tabs.Screen name="index" />
+        <Tabs.Screen name="journey" />
+        <Tabs.Screen name="community" />
+        <Tabs.Screen name="discover" />
+      </Tabs>
+      <CoachDemoButton />
+    </View>
   );
 }
