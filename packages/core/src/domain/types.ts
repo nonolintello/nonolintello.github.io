@@ -390,6 +390,8 @@ export interface SportEvent {
   distanceM?: number;
   kind: 'race' | 'competition' | 'local';
   participantCount?: number;
+  /** The course as sampled [lat, lon] arrays, start to finish. */
+  course?: { lat: number[]; lon: number[] };
 }
 
 /**

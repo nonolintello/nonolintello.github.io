@@ -7,7 +7,7 @@ import type {
   SportEvent,
 } from '../domain/types';
 import { addDays, toISODate } from '../analytics/time';
-import { phasesFor, range, smoothNoise, type Rng } from './random';
+import { mulberry32, phasesFor, range, smoothNoise, type Rng } from './random';
 
 /**
  * The world outside the athlete's own data: content, clubs, events and routes.
@@ -120,6 +120,34 @@ export const CLUBS: Club[] = [
   },
 ];
 
+const PHILLY = { lat: 39.9526, lon: -75.1652 };
+
+/**
+ * Race courses are point-to-point or loops through the city rather than the
+ * closed harmonic loops used for routes: a marathon course that reads as a
+ * long wandering line is what makes the roadmap feel like a journey.
+ */
+const courseShape = (seed: number, distanceM: number, origin: { lat: number; lon: number }) => {
+  const rng = mulberry32(seed);
+  const phases = phasesFor(rng, 4);
+  const metresPerDegLat = 111_320;
+  const metresPerDegLon = metresPerDegLat * Math.cos((origin.lat * Math.PI) / 180);
+  // A loop that never quite closes: out along the river, back through the park.
+  const radius = distanceM / (2 * Math.PI) / 1.15;
+  const orientation = rng() * Math.PI * 2;
+  const sweep = Math.PI * 1.7;
+  const lat: number[] = [];
+  const lon: number[] = [];
+  for (let i = 0; i <= 200; i++) {
+    const t = i / 200;
+    const angle = orientation + t * sweep;
+    const r = radius * (1 + smoothNoise(phases, t * 3) * 0.45);
+    lat.push(origin.lat + (Math.sin(angle) * r) / metresPerDegLat);
+    lon.push(origin.lon + (Math.cos(angle) * r) / metresPerDegLon);
+  }
+  return { lat, lon };
+};
+
 export const events = (now: Date): SportEvent[] => [
   {
     id: 'event-philly-marathon',
@@ -129,6 +157,7 @@ export const events = (now: Date): SportEvent[] => [
     distanceM: 42195,
     kind: 'race',
     participantCount: 12400,
+    course: courseShape(42195, 42195, PHILLY),
   },
   {
     id: 'event-broad-street',
@@ -138,6 +167,7 @@ export const events = (now: Date): SportEvent[] => [
     distanceM: 16093,
     kind: 'race',
     participantCount: 40000,
+    course: courseShape(16093, 16093, PHILLY),
   },
   {
     id: 'event-philly-half',
@@ -147,6 +177,7 @@ export const events = (now: Date): SportEvent[] => [
     distanceM: 21097,
     kind: 'race',
     participantCount: 9800,
+    course: courseShape(21097, 21097, PHILLY),
   },
   {
     id: 'event-rothman-8k',
@@ -156,6 +187,7 @@ export const events = (now: Date): SportEvent[] => [
     distanceM: 8000,
     kind: 'race',
     participantCount: 5200,
+    course: courseShape(8000, 8000, PHILLY),
   },
   {
     id: 'event-track-night',
@@ -173,10 +205,9 @@ export const events = (now: Date): SportEvent[] => [
     distanceM: 15000,
     kind: 'competition',
     participantCount: 430,
+    course: courseShape(15000, 15000, { lat: 40.02, lon: -75.21 }),
   },
 ];
-
-const PHILLY = { lat: 39.9526, lon: -75.1652 };
 
 /**
  * Route shapes are generated the same way activity routes are — a closed loop

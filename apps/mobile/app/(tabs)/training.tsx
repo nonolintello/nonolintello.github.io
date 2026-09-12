@@ -3,6 +3,7 @@ import { Alert, Pressable, Text, View, useWindowDimensions } from 'react-native'
 import { useRouter } from 'expo-router';
 import {
   addDays,
+  buildRoadmap,
   daysUntil,
   distanceIn,
   distanceLabel,
@@ -20,12 +21,14 @@ import {
   WEEKDAY_LABELS,
   WORKOUT_LABELS,
   type PlannedWorkout,
+  type RoadmapCheckpoint,
   type WorkoutType,
 } from '@ai/core';
 import { Screen } from '../../src/components/Screen';
 import { ScreenHeader } from '../../src/components/ScreenHeader';
 import { Icon, type IconName } from '../../src/components/Icon';
 import { ProgressRing } from '../../src/components/charts';
+import { RoadmapMap, checkpointColor } from '../../src/components/RoadmapMap';
 import {
   Body,
   Button,
@@ -55,7 +58,7 @@ const workoutTone = (t: WorkoutType) =>
   t === 'race' ? colors.accent : isQualityWorkout(t) ? colors.warn : t === 'rest' ? colors.textTertiary : colors.cyan;
 
 export default function TrainingScreen() {
-  const { me, profile, plan, races, raceEntries, block, activityById, unreadCount } = useApp();
+  const { me, profile, plan, races, raceEntries, block, events, myActivities, activityById, unreadCount } = useApp();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const unit = me.unitPreference;
@@ -65,7 +68,8 @@ export default function TrainingScreen() {
   const todayIso = toISODate(now);
 
   const [acceptedAdjustment, setAcceptedAdjustment] = useState(false);
-  const [tab, setTab] = useState<'today' | 'calendar' | 'goals'>('today');
+  const [tab, setTab] = useState<'roadmap' | 'today' | 'calendar' | 'goals'>('roadmap');
+  const [selectedCheckpoint, setSelectedCheckpoint] = useState<string | null>(null);
 
   const adherence = planAdherence(plan, weekStart);
   const upcoming = nextWorkout(plan, now);
@@ -79,6 +83,22 @@ export default function TrainingScreen() {
   );
   const suggestion = recommendToday(profile);
   const { recovery } = profile;
+
+  const roadmap = useMemo(
+    () => buildRoadmap({ profile, activities: myActivities, plan, races, block, events, now, unit }),
+    // now is intentionally excluded: it changes every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [profile, myActivities, plan, races, block, events, unit],
+  );
+  const focusCheckpoint =
+    roadmap.checkpoints.find((c) => c.id === selectedCheckpoint) ?? roadmap.next;
+  const openCheckpoint = (c: RoadmapCheckpoint) => {
+    if (c.activityId) router.push(`/activity/${c.activityId}`);
+    else if (c.raceId) {
+      const eventId = races.find((r) => r.id === c.raceId)?.eventId;
+      if (eventId) router.push(`/event/${eventId}`);
+    }
+  };
 
   const goalRace = races.find((r) => r.isGoalRace) ?? races[races.length - 1];
   const blockWeeks = block
@@ -102,11 +122,170 @@ export default function TrainingScreen() {
         value={tab}
         onChange={setTab}
         options={[
+          { value: 'roadmap', label: 'Roadmap' },
           { value: 'today', label: 'Today' },
           { value: 'calendar', label: 'Calendar' },
           { value: 'goals', label: 'Goals' },
         ]}
       />
+
+      {tab === 'roadmap' ? (
+        <>
+          {/* Roadmap ----------------------------------------------------- */}
+          <Card padded={false}>
+            <View style={{ padding: space.lg, paddingBottom: 0 }}>
+              <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <View style={{ flex: 1 }}>
+                  <Label>{roadmap.kind === 'race' ? 'Destination' : 'Progression'}</Label>
+                  <Text style={[type.title, { fontSize: 21, marginTop: 4 }]}>
+                    {roadmap.kind === 'race' ? roadmap.race.name : `Level ${roadmap.level} · ${roadmap.title}`}
+                  </Text>
+                  <Caption style={{ marginTop: 3 }}>{roadmap.summary}</Caption>
+                </View>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={[type.metric, { color: colors.accent }]}>
+                    {roadmap.kind === 'race' ? roadmap.daysRemaining : `${Math.round(roadmap.position * 100)}%`}
+                  </Text>
+                  <Caption style={{ fontSize: 11, color: colors.textTertiary }}>
+                    {roadmap.kind === 'race' ? 'days to go' : 'of the ladder'}
+                  </Caption>
+                </View>
+              </Row>
+            </View>
+
+            <RoadmapMap
+              roadmap={roadmap}
+              width={width - space.lg * 2}
+              height={Math.min(320, (width - space.lg * 2) * 0.9)}
+              selectedId={focusCheckpoint?.id ?? null}
+            />
+
+            <Divider />
+            <Row style={{ padding: space.lg, paddingVertical: space.md, justifyContent: 'space-between' }}>
+              <Row gap={space.lg}>
+                <Row gap={6}>
+                  <View style={[styles.dot, { backgroundColor: colors.accent }]} />
+                  <Caption style={{ fontSize: 11.5 }}>You</Caption>
+                </Row>
+                <Row gap={6}>
+                  <View style={[styles.dot, { backgroundColor: colors.cyan }]} />
+                  <Caption style={{ fontSize: 11.5 }}>Banked</Caption>
+                </Row>
+                <Row gap={6}>
+                  <View style={[styles.dot, { borderWidth: 1.5, borderColor: colors.textSecondary }]} />
+                  <Caption style={{ fontSize: 11.5 }}>Ahead</Caption>
+                </Row>
+              </Row>
+              <Caption style={{ fontSize: 11.5, color: colors.textTertiary }}>
+                {roadmap.doneCount}/{roadmap.checkpoints.length} checkpoints
+              </Caption>
+            </Row>
+          </Card>
+
+          {/* Focus checkpoint -------------------------------------------- */}
+          {focusCheckpoint ? (
+            <Card
+              style={{ borderColor: `${checkpointColor(focusCheckpoint)}55` }}
+              onPress={
+                focusCheckpoint.activityId || focusCheckpoint.raceId ? () => openCheckpoint(focusCheckpoint) : undefined
+              }
+            >
+              <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <View style={{ flex: 1 }}>
+                  <Label style={{ color: checkpointColor(focusCheckpoint) }}>
+                    {focusCheckpoint.id === roadmap.next?.id ? 'Next checkpoint' : checkpointLabel(focusCheckpoint)}
+                  </Label>
+                  <Text style={[type.subtitle, { marginTop: 4 }]}>{focusCheckpoint.title}</Text>
+                  <Body style={{ fontSize: 13, lineHeight: 19, marginTop: 4 }}>{focusCheckpoint.detail}</Body>
+                </View>
+                {roadmap.kind === 'race' ? (
+                  <View style={{ alignItems: 'flex-end', marginLeft: space.md }}>
+                    <Text style={[type.metricSmall, { fontSize: 20 }]}>
+                      {Math.abs(daysUntil(focusCheckpoint.date, now))}
+                    </Text>
+                    <Caption style={{ fontSize: 11, color: colors.textTertiary }}>
+                      {daysUntil(focusCheckpoint.date, now) >= 0 ? 'days away' : 'days ago'}
+                    </Caption>
+                  </View>
+                ) : null}
+              </Row>
+              {focusCheckpoint.activityId || focusCheckpoint.raceId ? (
+                <Row gap={4} style={{ marginTop: space.md }}>
+                  <Caption style={{ color: colors.accent, fontWeight: '700' }}>
+                    {focusCheckpoint.activityId ? 'Open the run' : 'Open the race'}
+                  </Caption>
+                  <Icon name="chevronRight" size={14} color={colors.accent} />
+                </Row>
+              ) : null}
+            </Card>
+          ) : null}
+
+          {/* Checkpoint list ----------------------------------------------- */}
+          <View>
+            <SectionHeader title="The journey" />
+            <Card padded={false}>
+              {roadmap.checkpoints.map((c, i) => {
+                const color = checkpointColor(c);
+                const isFocus = c.id === focusCheckpoint?.id;
+                const done = c.status === 'done';
+                return (
+                  <View key={c.id}>
+                    <Pressable
+                      onPress={() => setSelectedCheckpoint(c.id)}
+                      style={({ pressed }) => [
+                        styles.journeyRow,
+                        isFocus && { backgroundColor: 'rgba(255,255,255,0.035)' },
+                        pressed && { opacity: 0.7 },
+                      ]}
+                    >
+                      <View style={{ width: 22, alignItems: 'center', alignSelf: 'stretch' }}>
+                        <View
+                          style={[
+                            styles.journeyDot,
+                            done
+                              ? { backgroundColor: color }
+                              : c.status === 'missed'
+                                ? { borderWidth: 2, borderColor: colors.danger }
+                                : { borderWidth: 2, borderColor: color, opacity: c.status === 'current' ? 1 : 0.7 },
+                          ]}
+                        >
+                          {done ? <Icon name="check" size={9} color={colors.textInverse} /> : null}
+                        </View>
+                        {i < roadmap.checkpoints.length - 1 ? (
+                          <View style={[styles.journeyLine, done && { backgroundColor: `${color}66` }]} />
+                        ) : null}
+                      </View>
+                      <View style={{ flex: 1, paddingBottom: space.md }}>
+                        <Row style={{ justifyContent: 'space-between' }}>
+                          <Text
+                            style={[
+                              type.bodyStrong,
+                              { fontSize: 14.5, flex: 1 },
+                              !done && c.status !== 'current' && { color: colors.textSecondary },
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {c.title}
+                          </Text>
+                          {roadmap.kind === 'race' ? (
+                            <Caption style={{ fontSize: 11.5, color: colors.textTertiary }}>
+                              {new Date(`${c.date}T00:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+                            </Caption>
+                          ) : null}
+                        </Row>
+                        <Caption style={{ fontSize: 12, marginTop: 2, color: colors.textTertiary }} numberOfLines={2}>
+                          {c.status === 'missed' ? 'Missed · ' : ''}
+                          {c.detail}
+                        </Caption>
+                      </View>
+                    </Pressable>
+                  </View>
+                );
+              })}
+            </Card>
+          </View>
+        </>
+      ) : null}
 
       {tab === 'today' ? (
         <>
@@ -753,6 +932,9 @@ export default function TrainingScreen() {
   );
 }
 
+const checkpointLabel = (c: RoadmapCheckpoint) =>
+  c.status === 'done' ? 'Banked' : c.status === 'missed' ? 'Missed' : c.status === 'current' ? 'Today' : 'Ahead';
+
 /** Who else from MOOV is on this start list — the social half of a race card. */
 const StartListLink = ({ count, onPress }: { count: number; onPress: () => void }) => (
   <Pressable onPress={onPress} style={({ pressed }) => [{ marginTop: space.lg }, pressed && { opacity: 0.7 }]}>
@@ -815,6 +997,35 @@ const whenLabel = (isoDate: string, now: Date): string => {
 };
 
 const styles = {
+  dot: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+  },
+  journeyRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'flex-start' as const,
+    gap: space.md,
+    paddingHorizontal: space.lg,
+    paddingTop: space.md,
+  },
+  journeyDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    marginTop: 1,
+  },
+  journeyLine: {
+    width: 2,
+    flex: 1,
+    minHeight: 18,
+    marginTop: 3,
+    // Runs into the next row's top padding so the rail reads as continuous.
+    marginBottom: -space.md,
+    backgroundColor: colors.border,
+  },
   track: {
     height: 7,
     borderRadius: radius.pill,
