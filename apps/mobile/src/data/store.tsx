@@ -16,6 +16,7 @@ import {
   type AthleteProfile,
   type Challenge,
   type ChallengeParticipation,
+  type Coach,
   type Goal,
   type Insight,
   type InsightProvider,
@@ -24,6 +25,7 @@ import {
   type Race,
   type RaceEntry,
   type TrainingBlock,
+  type TrainingPlan,
   type AppNotification,
   type AthleteGoal,
   type Club,
@@ -71,6 +73,16 @@ interface AppState {
   setGoal(goal: Omit<Goal, 'id'>): Promise<void>;
   registerForEvent(eventId: string, expectedSeconds?: number): Promise<void>;
   withdrawFromEvent(eventId: string): Promise<void>;
+  /** The athlete's coach-assigned plans and the coach behind them. */
+  plans: TrainingPlan[];
+  myCoach: Coach | null;
+  /** Re-reads the plan after a coach (or the athlete) changes it. */
+  refreshPlan(): Promise<void>;
+  modifyWorkout(workoutId: string, changes: Partial<PlannedWorkout>, note: string): Promise<void>;
+  /** The signed-in coach, when the app is in coach mode. */
+  coach: Coach | null;
+  signInCoach(input: { email: string; displayName?: string; credential?: string }): Promise<Coach>;
+  signOutCoach(): void;
   loadMoreFeed(): Promise<void>;
   activityById(id: string): Activity | undefined;
   athleteById(id: string): Athlete | undefined;
@@ -109,6 +121,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [clubs, setClubs] = useState<Club[]>([]);
   const [events, setEvents] = useState<SportEvent[]>([]);
   const [raceEntries, setRaceEntries] = useState<RaceEntry[]>([]);
+  const [plans, setPlans] = useState<TrainingPlan[]>([]);
+  const [myCoach, setMyCoach] = useState<Coach | null>(null);
+  const [coach, setCoach] = useState<Coach | null>(null);
   const [routes, setRoutes] = useState<RouteSuggestion[]>([]);
   const [leaderboards, setLeaderboards] = useState<Record<string, LeaderboardEntry[]>>({});
 
@@ -154,6 +169,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setClubs(clubList);
       setEvents(eventList);
       setRaceEntries(entryList);
+      setPlans(await repository.getPlans(athlete.id));
+      setMyCoach(await repository.getCoachForAthlete(athlete.id));
       setRoutes(routeList);
       setLeaderboards({ friends: friendBoard, club: clubBoard });
       setMe(athlete);
@@ -255,6 +272,36 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     [repository],
   );
 
+  const refreshPlan = useCallback(async () => {
+    if (!me) return;
+    const [workouts, planList, coachNow] = await Promise.all([
+      repository.getPlan(me.id),
+      repository.getPlans(me.id),
+      repository.getCoachForAthlete(me.id),
+    ]);
+    setPlan(workouts);
+    setPlans(planList);
+    setMyCoach(coachNow);
+  }, [me, repository]);
+
+  const modifyWorkout = useCallback(
+    async (workoutId: string, changes: Partial<PlannedWorkout>, note: string) => {
+      await repository.modifyWorkout(workoutId, changes, note);
+      await refreshPlan();
+    },
+    [repository, refreshPlan],
+  );
+
+  const signInCoach = useCallback(
+    async (input: { email: string; displayName?: string; credential?: string }) => {
+      const signedIn = await repository.signInCoach(input);
+      setCoach(signedIn);
+      return signedIn;
+    },
+    [repository],
+  );
+  const signOutCoach = useCallback(() => setCoach(null), []);
+
   const loadMoreFeed = useCallback(async () => {
     if (!feedCursor) return;
     const page = await repository.getFeed(feedCursor);
@@ -315,6 +362,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setGoal,
       registerForEvent,
       withdrawFromEvent,
+      plans,
+      myCoach,
+      refreshPlan,
+      modifyWorkout,
+      coach,
+      signInCoach,
+      signOutCoach,
       loadMoreFeed,
       activityById,
       athleteById,
@@ -349,6 +403,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setGoal,
     registerForEvent,
     withdrawFromEvent,
+    plans,
+    myCoach,
+    refreshPlan,
+    modifyWorkout,
+    coach,
+    signInCoach,
+    signOutCoach,
     loadMoreFeed,
     activityById,
     athleteById,

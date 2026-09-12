@@ -7,6 +7,8 @@ import {
   type AthleteRepository,
   type Challenge,
   type ChallengeParticipation,
+  type Coach,
+  type CoachAthleteLink,
   type Comment,
   type DemoDataset,
   type FeedPage,
@@ -16,6 +18,7 @@ import {
   type Race,
   type RaceEntry,
   type TrainingBlock,
+  type TrainingPlan,
 } from '@ai/core';
 
 /**
@@ -133,7 +136,9 @@ export class DemoRepository implements AthleteRepository {
   }
 
   async getPlan(athleteId: string): Promise<PlannedWorkout[]> {
-    return this.data.plan.filter((p) => p.athleteId === athleteId);
+    return this.data.plan
+      .filter((p) => p.athleteId === athleteId)
+      .sort((a, b) => a.date.localeCompare(b.date));
   }
 
   async getRaces(athleteId: string): Promise<Race[]> {
@@ -300,5 +305,123 @@ export class DemoRepository implements AthleteRepository {
 
   async isFollowing(athleteId: string): Promise<boolean> {
     return this.following.has(athleteId);
+  }
+
+  // Coaching ------------------------------------------------------------
+
+  async signInCoach(input: { email: string; displayName?: string; credential?: string }): Promise<Coach> {
+    const email = input.email.trim().toLowerCase();
+    const existing = this.data.coaches.find((c) => c.email.toLowerCase() === email);
+    if (existing) return existing;
+    const coach: Coach = {
+      id: `coach-new-${this.nextId++}`,
+      displayName: input.displayName?.trim() || email.split('@')[0] || 'Coach',
+      email,
+      credential: input.credential?.trim() || undefined,
+      createdAt: new Date().toISOString(),
+    };
+    this.data.coaches.push(coach);
+    return coach;
+  }
+
+  async getCoach(coachId: string): Promise<Coach | null> {
+    return this.data.coaches.find((c) => c.id === coachId) ?? null;
+  }
+
+  async getCoachLinks(coachId: string): Promise<CoachAthleteLink[]> {
+    return this.data.coachLinks.filter((l) => l.coachId === coachId);
+  }
+
+  async getCoachForAthlete(athleteId: string): Promise<Coach | null> {
+    const link = this.data.coachLinks.find((l) => l.athleteId === athleteId && l.status === 'connected');
+    return link ? ((await this.getCoach(link.coachId)) ?? null) : null;
+  }
+
+  async inviteAthlete(coachId: string, handle: string): Promise<CoachAthleteLink> {
+    const athlete = this.data.athletes.find((a) => a.handle.toLowerCase() === handle.replace(/^@/, '').toLowerCase());
+    if (!athlete) throw new Error(`No athlete @${handle} on MOOV`);
+    const existing = this.data.coachLinks.find((l) => l.coachId === coachId && l.athleteId === athlete.id);
+    if (existing) return existing;
+    const link: CoachAthleteLink = {
+      coachId,
+      athleteId: athlete.id,
+      status: 'invited',
+      invitedAt: new Date().toISOString(),
+    };
+    this.data.coachLinks.push(link);
+    return link;
+  }
+
+  async acceptCoachInvite(coachId: string, athleteId: string): Promise<CoachAthleteLink> {
+    const link = this.data.coachLinks.find((l) => l.coachId === coachId && l.athleteId === athleteId);
+    if (!link) throw new Error('No invitation to accept');
+    link.status = 'connected';
+    link.connectedAt = new Date().toISOString();
+    return link;
+  }
+
+  async removeAthlete(coachId: string, athleteId: string): Promise<void> {
+    this.data.coachLinks = this.data.coachLinks.filter((l) => !(l.coachId === coachId && l.athleteId === athleteId));
+  }
+
+  async searchAthletes(query: string): Promise<Athlete[]> {
+    const q = query.trim().replace(/^@/, '').toLowerCase();
+    return this.data.athletes.filter(
+      (a) => !q || a.handle.toLowerCase().includes(q) || a.displayName.toLowerCase().includes(q),
+    );
+  }
+
+  async getPlans(athleteId: string): Promise<TrainingPlan[]> {
+    return this.data.plans.filter((p) => p.athleteId === athleteId);
+  }
+
+  async assignPlan(plan: TrainingPlan, workouts: PlannedWorkout[]): Promise<TrainingPlan> {
+    // One plan per athlete at a time: the new one supersedes anything that
+    // overlaps it, and self-planned sessions from its start date give way.
+    this.data.plans = this.data.plans.filter((p) => p.athleteId !== plan.athleteId || p.endsOn < plan.startsOn);
+    this.data.plan = this.data.plan.filter((w) => w.athleteId !== plan.athleteId || w.date < plan.startsOn);
+    this.data.plans.push(plan);
+    this.data.plan.push(...workouts);
+    this.contextResolvers.delete(plan.athleteId);
+    return plan;
+  }
+
+  async updatePlan(plan: TrainingPlan): Promise<TrainingPlan> {
+    const idx = this.data.plans.findIndex((p) => p.id === plan.id);
+    const updated = { ...plan, updatedAt: new Date().toISOString() };
+    if (idx >= 0) this.data.plans[idx] = updated;
+    else this.data.plans.push(updated);
+    return updated;
+  }
+
+  async deletePlan(planId: string): Promise<void> {
+    const plan = this.data.plans.find((p) => p.id === planId);
+    this.data.plans = this.data.plans.filter((p) => p.id !== planId);
+    this.data.plan = this.data.plan.filter((w) => w.planId !== planId);
+    if (plan) this.contextResolvers.delete(plan.athleteId);
+  }
+
+  async upsertWorkout(workout: PlannedWorkout): Promise<PlannedWorkout> {
+    const idx = this.data.plan.findIndex((w) => w.id === workout.id);
+    if (idx >= 0) this.data.plan[idx] = workout;
+    else this.data.plan.push(workout);
+    const plan = workout.planId ? this.data.plans.find((p) => p.id === workout.planId) : null;
+    if (plan) plan.updatedAt = new Date().toISOString();
+    this.contextResolvers.delete(workout.athleteId);
+    return workout;
+  }
+
+  async deleteWorkout(workoutId: string): Promise<void> {
+    const workout = this.data.plan.find((w) => w.id === workoutId);
+    this.data.plan = this.data.plan.filter((w) => w.id !== workoutId);
+    if (workout) this.contextResolvers.delete(workout.athleteId);
+  }
+
+  async modifyWorkout(workoutId: string, changes: Partial<PlannedWorkout>, note: string): Promise<PlannedWorkout> {
+    const workout = this.data.plan.find((w) => w.id === workoutId);
+    if (!workout) throw new Error(`Unknown workout ${workoutId}`);
+    Object.assign(workout, changes, { modified: true, modifiedNote: note });
+    this.contextResolvers.delete(workout.athleteId);
+    return workout;
   }
 }

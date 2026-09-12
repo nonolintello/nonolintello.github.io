@@ -15,13 +15,26 @@ The product is built as a loop, not a set of features:
 | Tab | Question | What it does |
 | --- | --- | --- |
 | **Intelligence** | What is happening to me? | Athlete status, fitness/recovery/fatigue/load, proactive insights, race readiness, goal projections, Ask MOOV |
-| **Training** | What should I do about it? | Roadmap to the goal race, today's session, calendar, adaptive recommendations |
+| **Journey** | What should I do about it? | Roadmap on the race course to the goal, today's session, calendar, coach-assigned plans |
 | **Community** | What are people around me doing? | Feed with real context, challenges, leaderboards, athlete profiles |
 | **Discover** | What else can I explore? | Creators, athletes, clubs, events, routes |
 
 Profile, search and notifications are global — reached from the header, not the
 tab bar. Logging an activity is an action, so it lives behind the "+" rather
 than occupying a fifth of the navigation.
+
+## Coaches
+
+MOOV is two-sided. Athletes use it to understand their training; coaches use
+it to manage athletes and prescribe it. Coach mode is reached from the
+athlete's profile (demo account `priya@moov.coach`):
+
+- a roster with each athlete's week, recovery and plan status, plus invites
+- an athlete view built from the same profile, insights and roadmap the
+  athlete sees
+- a plan editor: generate a periodised block from a template scaled to the
+  athlete's current volume, mark key workouts, edit any day, assign it — the
+  athlete sees it in their Journey immediately, key sessions on the roadmap
 
 ## Getting started
 

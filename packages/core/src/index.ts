@@ -15,6 +15,7 @@ export * from './analytics/readiness';
 export * from './analytics/objectives';
 export * from './analytics/coaching';
 export * from './analytics/roadmap';
+export * from './analytics/planBuilder';
 
 export * from './insights/port';
 export * from './insights/ruleBased';

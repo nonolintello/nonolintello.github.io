@@ -5,6 +5,8 @@ import type {
   AthleteGoal,
   Challenge,
   ChallengeParticipation,
+  Coach,
+  CoachAthleteLink,
   Comment,
   Goal,
   PlannedWorkout,
@@ -14,6 +16,7 @@ import type {
   Race,
   RaceEntry,
   RouteSuggestion,
+  TrainingPlan,
   SportEvent,
   TrainingBlock,
   WellnessDay,
@@ -22,6 +25,7 @@ import type {
 import { prDistanceLabel, WORKOUT_LABELS } from '../domain/types';
 import { addDays, daysBetween, startOfDay, startOfWeek, toISODate } from '../analytics/time';
 import { currentRecords, predictRaceTime } from '../analytics/bestEfforts';
+import { generatePlanFromTemplate } from '../analytics/planBuilder';
 import { distanceIn, distanceLabel, formatDuration } from '../domain/units';
 import { clamp } from '../analytics/stats';
 import { chance, gaussian, intRange, mulberry32, phasesFor, pick, range, smoothNoise, type Rng } from './random';
@@ -40,6 +44,9 @@ export interface DemoDataset {
   races: Race[];
   raceEntries: RaceEntry[];
   block: TrainingBlock;
+  coaches: Coach[];
+  coachLinks: CoachAthleteLink[];
+  plans: TrainingPlan[];
   wellness: WellnessDay[];
   objectives: AthleteGoal[];
   notifications: AppNotification[];
@@ -596,6 +603,7 @@ export const generateDemoDataset = (now: Date = new Date(), seed = 20260910): De
   const races = generateRaces(now, me.id);
   const eventList = events(now);
   const raceEntries = generateRaceEntries(rng, now, me, races, eventList);
+  const { coaches, coachLinks, plans, coachWorkouts } = generateCoaching(now, friends, friendActivities);
   const wellness = generateWellness(rng, now, activities, me);
   const objectives = generateObjectives(now, me.id);
   const leaderboards = generateLeaderboards(rng, me, friends);
@@ -619,10 +627,13 @@ export const generateDemoDataset = (now: Date = new Date(), seed = 20260910): De
     challenges,
     participations,
     comments,
-    plan,
+    plan: [...plan, ...coachWorkouts],
     races,
     raceEntries,
     block,
+    coaches,
+    coachLinks,
+    plans,
     wellness,
     objectives,
     notifications: notifications(
@@ -637,6 +648,79 @@ export const generateDemoDataset = (now: Date = new Date(), seed = 20260910): De
     routes: routes(rng),
     leaderboards,
   };
+};
+
+/**
+ * The coaching side of the demo: one coach, already working with a couple of
+ * the seed athletes, one invitation still pending.
+ *
+ * Mara has a plan four weeks in, so the coach's view has completed and missed
+ * sessions to show; the demo athlete has no coach plan yet, which is the whole
+ * point — assigning one is the flow the demo exists to show.
+ */
+const generateCoaching = (now: Date, friends: readonly Athlete[], friendActivities: readonly Activity[]) => {
+  const priya = friends.find((f) => f.id === 'athlete-priya');
+  const coach: Coach = {
+    id: 'coach-priya',
+    displayName: priya?.displayName ?? 'Priya Raman',
+    email: 'priya@moov.coach',
+    credential: 'UESCA certified · 40+ marathoners coached',
+    athleteId: priya?.id,
+    createdAt: addDays(now, -300).toISOString(),
+  };
+
+  const coachLinks: CoachAthleteLink[] = [
+    {
+      coachId: coach.id,
+      athleteId: 'athlete-me',
+      status: 'connected',
+      invitedAt: addDays(now, -12).toISOString(),
+      connectedAt: addDays(now, -11).toISOString(),
+    },
+    {
+      coachId: coach.id,
+      athleteId: 'athlete-mara',
+      status: 'connected',
+      invitedAt: addDays(now, -60).toISOString(),
+      connectedAt: addDays(now, -59).toISOString(),
+    },
+    { coachId: coach.id, athleteId: 'athlete-noe', status: 'invited', invitedAt: addDays(now, -2).toISOString() },
+  ];
+
+  const maraStart = toISODate(addDays(startOfWeek(now), -28));
+  const mara = generatePlanFromTemplate({
+    athleteId: 'athlete-mara',
+    coachId: coach.id,
+    name: 'Marathon build',
+    startsOn: maraStart,
+    weeks: 12,
+    currentWeeklyM: 78000,
+    longestRunM: 28000,
+    now,
+    focus: 'Two quality sessions a week and a long run that grows every fortnight.',
+  });
+
+  // Match past prescribed sessions to what Mara actually ran, day by day.
+  const todayIso = toISODate(now);
+  const byDay = new Map<string, Activity>();
+  for (const a of friendActivities) {
+    if (a.athleteId !== 'athlete-mara') continue;
+    byDay.set(toISODate(new Date(a.startedAt)), a);
+  }
+  for (const w of mara.workouts) {
+    if (w.date >= todayIso || w.type === 'rest') continue;
+    const done = byDay.get(w.date);
+    if (done) {
+      w.completedActivityId = done.id;
+      // A long run cut well short reads as modified, not completed.
+      if (w.targetDistanceM && done.distanceM < w.targetDistanceM * 0.75) {
+        w.modified = true;
+        w.modifiedNote = `Ran ${(done.distanceM / 1000).toFixed(1)} km of ${(w.targetDistanceM / 1000).toFixed(0)} km.`;
+      }
+    }
+  }
+
+  return { coaches: [coach], coachLinks, plans: [mara.plan], coachWorkouts: mara.workouts };
 };
 
 /** Facts the notification copy is written from, so nothing it claims is invented. */

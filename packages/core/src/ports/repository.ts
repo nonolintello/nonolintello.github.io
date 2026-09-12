@@ -3,12 +3,15 @@ import type {
   Athlete,
   Challenge,
   ChallengeParticipation,
+  Coach,
+  CoachAthleteLink,
   Comment,
   Goal,
   PlannedWorkout,
   Race,
   RaceEntry,
   TrainingBlock,
+  TrainingPlan,
 } from '../domain/types';
 
 export interface FeedPage {
@@ -59,6 +62,29 @@ export interface AthleteRepository {
   getSuggestedAthletes(limit?: number): Promise<Athlete[]>;
   toggleFollow(athleteId: string): Promise<boolean>;
   isFollowing(athleteId: string): Promise<boolean>;
+
+  // Coaching ------------------------------------------------------------
+  /** The coach account behind these credentials, created on first sign-in. */
+  signInCoach(input: { email: string; displayName?: string; credential?: string }): Promise<Coach>;
+  getCoach(coachId: string): Promise<Coach | null>;
+  getCoachLinks(coachId: string): Promise<CoachAthleteLink[]>;
+  /** The athlete's coach, if they have accepted one. */
+  getCoachForAthlete(athleteId: string): Promise<Coach | null>;
+  inviteAthlete(coachId: string, handle: string): Promise<CoachAthleteLink>;
+  acceptCoachInvite(coachId: string, athleteId: string): Promise<CoachAthleteLink>;
+  removeAthlete(coachId: string, athleteId: string): Promise<void>;
+  /** Every athlete on MOOV a coach could invite. Production would search. */
+  searchAthletes(query: string): Promise<Athlete[]>;
+
+  getPlans(athleteId: string): Promise<TrainingPlan[]>;
+  /** Assigns a plan; its sessions replace the athlete's own from the start date. */
+  assignPlan(plan: TrainingPlan, workouts: PlannedWorkout[]): Promise<TrainingPlan>;
+  updatePlan(plan: TrainingPlan): Promise<TrainingPlan>;
+  deletePlan(planId: string): Promise<void>;
+  upsertWorkout(workout: PlannedWorkout): Promise<PlannedWorkout>;
+  deleteWorkout(workoutId: string): Promise<void>;
+  /** The athlete changed a prescribed session — kept, flagged for the coach. */
+  modifyWorkout(workoutId: string, changes: Partial<PlannedWorkout>, note: string): Promise<PlannedWorkout>;
 }
 
 export interface NewActivityInput {

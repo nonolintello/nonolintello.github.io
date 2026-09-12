@@ -228,13 +228,36 @@ const buildRaceRoadmap = (input: RoadmapInput, race: Race, now: Date): RaceRoadm
     });
   }
 
-  // The next planned long run. Only one: a plan's horizon is a few weeks and
-  // its long runs repeat, and three identical checkpoints say nothing.
+  // Coach-marked key workouts are the plan's own milestones, past and future.
+  // A missed one stays on the road, marked, because a build is honest or it is
+  // nothing.
+  const keyWorkouts = input.plan
+    .filter((p) => p.keyWorkout && p.type !== 'race')
+    .filter((p) => dateOf(p.date).getTime() >= start.getTime() && dateOf(p.date).getTime() < raceDay.getTime())
+    .sort((a, b) => a.date.localeCompare(b.date));
+  for (const p of keyWorkouts) {
+    const when = dateOf(p.date);
+    const past = when.getTime() < now.getTime();
+    checkpoints.push({
+      id: `planned-${p.id}`,
+      kind: p.type === 'long' ? 'long_run' : 'workout',
+      title: p.targetDistanceM && p.type === 'long' ? `${km(p.targetDistanceM, unit)} ${p.title.toLowerCase()}` : p.title,
+      detail: p.prescription ?? 'Key session of the plan.',
+      date: p.date,
+      position: at(when),
+      status: p.completedActivityId ? 'done' : past ? 'missed' : statusFor(when),
+      plannedWorkoutId: p.id,
+      activityId: p.completedActivityId,
+    });
+  }
+
+  // Without a coach's milestones, the next planned long run stands in. Only
+  // one: a self-plan's horizon is a few weeks and its long runs repeat.
   const plannedLongs = input.plan
-    .filter((p) => p.type === 'long' && !p.completedActivityId && !p.skipped)
+    .filter((p) => p.type === 'long' && !p.keyWorkout && !p.completedActivityId && !p.skipped)
     .filter((p) => dateOf(p.date).getTime() >= now.getTime() && dateOf(p.date).getTime() < raceDay.getTime())
     .sort((a, b) => a.date.localeCompare(b.date));
-  for (const p of plannedLongs.slice(0, 1)) {
+  for (const p of keyWorkouts.length === 0 ? plannedLongs.slice(0, 1) : []) {
     checkpoints.push({
       id: `planned-${p.id}`,
       kind: 'long_run',
@@ -251,7 +274,7 @@ const buildRaceRoadmap = (input: RoadmapInput, race: Race, now: Date): RaceRoadm
   // long run before the taper, then the taper itself.
   const taperStart = addDays(raceDay, -shape.taperDays);
   const peakDay = addDays(taperStart, -1 - ((addDays(taperStart, -1).getDay() + 7) % 7));
-  const lastPlanned = plannedLongs[plannedLongs.length - 1];
+  const lastPlanned = [...keyWorkouts, ...plannedLongs].sort((a, b) => a.date.localeCompare(b.date)).pop();
   const peakCovered = lastPlanned && dateOf(lastPlanned.date).getTime() >= peakDay.getTime();
   if (!peakCovered && peakDay.getTime() > now.getTime() && ceiling < shape.peakLongM) {
     checkpoints.push({
@@ -318,7 +341,7 @@ const buildRaceRoadmap = (input: RoadmapInput, race: Race, now: Date): RaceRoadm
     daysRemaining === 0
       ? 'Race day.'
       : next
-        ? `${weeksLeft} ${weeksLeft === 1 ? 'week' : 'weeks'} to go · next: ${next.title.toLowerCase()} ${
+        ? `${weeksLeft} ${weeksLeft === 1 ? 'week' : 'weeks'} to go · next: ${next.title} ${
             daysBetween(now, dateOf(next.date)) === 0 ? 'today' : `in ${daysBetween(now, dateOf(next.date))}d`
           }`
         : `${weeksLeft} weeks to go.`;

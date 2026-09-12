@@ -92,7 +92,7 @@ export default function ProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const { me, profile: myProfile, repository, athleteById, events, raceEntries } = useApp();
+  const { me, profile: myProfile, repository, athleteById, events, raceEntries, coach, myCoach } = useApp();
 
   const athleteId = String(id);
   const isMe = athleteId === me.id;
@@ -441,6 +441,36 @@ export default function ProfileScreen() {
           ))}
         </ScrollView>
       </View>
+
+      {isMe ? (
+        <Card onPress={() => router.push(coach ? '/coach' : '/coach/login')} style={{ borderColor: colors.cyanSoft }}>
+          <Row gap={space.md}>
+            <View
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: radius.sm,
+                backgroundColor: colors.cyanSoft,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Icon name="community" size={18} color={colors.cyan} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={type.bodyStrong}>{coach ? `Coach mode · ${coach.displayName}` : 'MOOV for coaches'}</Text>
+              <Body style={{ fontSize: 13, marginTop: 3, lineHeight: 18 }}>
+                {coach
+                  ? 'Back to your athletes, plans and roster.'
+                  : myCoach
+                    ? `You're coached by ${myCoach.displayName}. Coaches sign in here.`
+                    : 'Manage athletes and prescribe training from what MOOV knows about them.'}
+              </Body>
+            </View>
+            <Icon name="chevronRight" size={16} color={colors.textTertiary} />
+          </Row>
+        </Card>
+      ) : null}
 
       {isMe ? (
         <Card>

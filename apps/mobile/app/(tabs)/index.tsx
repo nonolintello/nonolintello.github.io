@@ -227,7 +227,7 @@ export default function IntelligenceScreen() {
 
       {/* Races ------------------------------------------------------- */}
       <View>
-        <SectionHeader title="Race readiness" action="Roadmap" onAction={() => router.push('/training')} />
+        <SectionHeader title="Race readiness" action="Roadmap" onAction={() => router.push('/journey')} />
         <View style={{ gap: space.md }}>
           {profile.raceReadiness.map((r) => (
             <Card

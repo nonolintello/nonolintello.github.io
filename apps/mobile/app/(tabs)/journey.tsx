@@ -20,6 +20,7 @@ import {
   toISODate,
   WEEKDAY_LABELS,
   WORKOUT_LABELS,
+  workoutStatus,
   type PlannedWorkout,
   type RoadmapCheckpoint,
   type WorkoutType,
@@ -58,7 +59,21 @@ const workoutTone = (t: WorkoutType) =>
   t === 'race' ? colors.accent : isQualityWorkout(t) ? colors.warn : t === 'rest' ? colors.textTertiary : colors.cyan;
 
 export default function TrainingScreen() {
-  const { me, profile, plan, races, raceEntries, block, events, myActivities, activityById, unreadCount } = useApp();
+  const {
+    me,
+    profile,
+    plan,
+    plans,
+    myCoach,
+    races,
+    raceEntries,
+    block,
+    events,
+    myActivities,
+    activityById,
+    modifyWorkout,
+    unreadCount,
+  } = useApp();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const unit = me.unitPreference;
@@ -68,10 +83,12 @@ export default function TrainingScreen() {
   const todayIso = toISODate(now);
 
   const [acceptedAdjustment, setAcceptedAdjustment] = useState(false);
-  const [tab, setTab] = useState<'roadmap' | 'today' | 'calendar'>('roadmap');
+  const [tab, setTab] = useState<'roadmap' | 'training'>('roadmap');
   const [selectedCheckpoint, setSelectedCheckpoint] = useState<string | null>(null);
+  const [showFullPlan, setShowFullPlan] = useState(false);
 
   const adherence = planAdherence(plan, weekStart);
+  const activePlan = plans.find((p) => p.endsOn >= todayIso) ?? null;
   const upcoming = nextWorkout(plan, now);
   const todayWorkout = plan.find((p) => p.date === todayIso && p.type !== 'rest');
   const todayDone = Boolean(todayWorkout?.completedActivityId);
@@ -111,7 +128,7 @@ export default function TrainingScreen() {
     <Screen contentStyle={{ paddingHorizontal: space.lg, gap: space.xl }}>
       <ScreenHeader
         eyebrow="Improve me"
-        title="Training"
+        title="Journey"
         athleteName={me.displayName}
         athleteId={me.id}
         unreadCount={unreadCount}
@@ -122,8 +139,7 @@ export default function TrainingScreen() {
         onChange={setTab}
         options={[
           { value: 'roadmap', label: 'Roadmap' },
-          { value: 'today', label: 'Today' },
-          { value: 'calendar', label: 'Calendar' },
+          { value: 'training', label: 'Training' },
         ]}
       />
 
@@ -159,7 +175,7 @@ export default function TrainingScreen() {
               onSelect={setSelectedCheckpoint}
             />
             <Caption style={{ textAlign: 'center', fontSize: 11, color: colors.textTertiary, marginTop: -4, marginBottom: space.sm }}>
-              Tap a checkpoint on the course
+              Drag along the course to scrub · tap a checkpoint
             </Caption>
 
             <Divider />
@@ -287,89 +303,10 @@ export default function TrainingScreen() {
             </Card>
           </View>
 
-          {/* Races ------------------------------------------------------- */}
-          <View>
-            <SectionHeader title="Races" action="Readiness analysis" onAction={() => router.push('/')} />
-            <Card padded={false}>
-              {profile.raceReadiness.map((r, i) => (
-                <View key={r.race.id}>
-                  <Pressable
-                    onPress={() => r.race.eventId && router.push(`/event/${r.race.eventId}`)}
-                    style={({ pressed }) => [
-                      { padding: space.lg, paddingVertical: space.md, gap: space.sm },
-                      pressed && { opacity: 0.7 },
-                    ]}
-                  >
-                    <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <View style={{ flex: 1 }}>
-                        <Row gap={space.sm}>
-                          <Text style={type.bodyStrong}>{r.race.name}</Text>
-                          {r.race.isGoalRace ? <Pill tone="accent">Goal race</Pill> : null}
-                        </Row>
-                        <Caption style={{ fontSize: 12, marginTop: 2, color: colors.textTertiary }}>
-                          {prDistanceLabel(r.race.distanceM)}
-                          {r.race.goalSeconds ? ` · target ${formatDuration(r.race.goalSeconds)}` : ''}
-                          {r.race.eventId
-                            ? ` · ${raceEntries.filter((e) => e.eventId === r.race.eventId && e.athleteId !== me.id).length} others from MOOV`
-                            : ''}
-                        </Caption>
-                      </View>
-                      <View style={{ alignItems: 'flex-end', marginLeft: space.md }}>
-                        <Text style={[type.metricSmall, { fontSize: 20, color: r.race.isGoalRace ? colors.accent : colors.text }]}>
-                          {r.daysUntil}
-                        </Text>
-                        <Caption style={{ fontSize: 11, color: colors.textTertiary }}>days</Caption>
-                      </View>
-                    </Row>
-                    <Row gap={space.sm}>
-                      <View style={[styles.track, { flex: 1, height: 5 }]}>
-                        <View
-                          style={[
-                            styles.trackFill,
-                            {
-                              width: `${r.percent}%`,
-                              backgroundColor:
-                                r.percent >= 80 ? colors.success : r.percent >= 60 ? colors.warn : colors.danger,
-                            },
-                          ]}
-                        />
-                      </View>
-                      <Caption style={{ fontSize: 11.5, color: colors.textSecondary, width: 74, textAlign: 'right' }}>
-                        {r.percent}% ready
-                      </Caption>
-                    </Row>
-                  </Pressable>
-                  {i < profile.raceReadiness.length - 1 ? <Divider /> : null}
-                </View>
-              ))}
-            </Card>
-          </View>
-
-          {/* This week's goal -------------------------------------------- */}
-          <SectionHeader title="This week" />
-          {profile.goal ? (
-            <Card style={{ alignItems: 'center', paddingVertical: space.xl }}>
-              <ProgressRing progress={profile.goal.ratio} size={164} strokeWidth={13}>
-                <Text style={[type.display, { fontSize: 42, lineHeight: 44 }]}>
-                  {distanceIn(profile.goal.currentValue, unit).toFixed(1)}
-                </Text>
-                <Text style={[type.caption, { color: colors.textTertiary, marginTop: 2 }]}>
-                  of {distanceIn(profile.goal.targetValue, unit).toFixed(0)} {distanceLabel(unit)}
-                </Text>
-              </ProgressRing>
-              <Caption style={{ marginTop: space.lg, color: colors.textTertiary }}>
-                This week ·{' '}
-                {profile.goal.isComplete
-                  ? 'goal met'
-                  : `${distanceIn(profile.goal.remaining, unit).toFixed(1)} ${distanceLabel(unit)} to go`}
-              </Caption>
-            </Card>
-          ) : null}
-
         </>
       ) : null}
 
-      {tab === 'today' ? (
+      {tab === 'training' ? (
         <>
           {/* Today ------------------------------------------------------- */}
           <View>
@@ -560,7 +497,21 @@ export default function TrainingScreen() {
                   </Body>
 
                   <Row gap={space.sm} style={{ marginTop: space.lg }}>
-                    <Button style={{ flex: 1 }} onPress={() => setAcceptedAdjustment(true)}>
+                    <Button
+                      style={{ flex: 1 }}
+                      onPress={async () => {
+                        await modifyWorkout(
+                          adjustment.original.id,
+                          {
+                            type: adjustment.suggestedType,
+                            title: adjustment.suggestedTitle,
+                            prescription: adjustment.suggestedPrescription,
+                          },
+                          adjustment.reason,
+                        );
+                        setAcceptedAdjustment(true);
+                      }}
+                    >
                       Accept
                     </Button>
                     <Button
@@ -690,138 +641,254 @@ export default function TrainingScreen() {
               </Card>
             </View>
           ) : null}
-        </>
-      ) : null}
-
-      {tab === 'calendar' ? (
-        <View style={{ gap: space.lg }}>
-          {[0, 1, 2].map((weekOffset) => {
-            const start = addDays(weekStart, weekOffset * 7);
-            const days = planWeekDays(plan, start).filter(
-              (w): w is PlannedWorkout => w !== null && w.type !== 'rest',
-            );
-            if (days.length === 0) return null;
-            const weekDistance = days.reduce((a, w) => a + (w.targetDistanceM ?? 0), 0);
-
-            return (
-              <View key={weekOffset}>
-                <Row style={{ justifyContent: 'space-between', marginBottom: space.sm }}>
-                  <Label>
-                    {weekOffset === 0
-                      ? 'This week'
-                      : weekOffset === 1
-                        ? 'Next week'
-                        : `Week of ${new Date(start).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`}
-                  </Label>
-                  <Caption style={{ fontSize: 12, color: colors.textTertiary }}>
-                    {distanceIn(weekDistance, unit).toFixed(0)} {distanceLabel(unit)} planned
-                  </Caption>
-                </Row>
-
-                <Card padded={false}>
-                  {days.map((workout, i) => {
-                    const completed = workout.completedActivityId
-                      ? activityById(workout.completedActivityId)
-                      : undefined;
-                    return (
-                      <View key={workout.id}>
-                        <Pressable
-                          onPress={() => completed && router.push(`/activity/${completed.id}`)}
-                        >
-                          <Row style={{ padding: space.lg, paddingVertical: space.md }}>
-                            <View style={{ width: 34 }}>
-                              <Text
-                                style={[
-                                  type.label,
-                                  {
-                                    fontSize: 9.5,
-                                    color: workout.date === todayIso ? colors.accent : colors.textTertiary,
-                                  },
-                                ]}
-                              >
-                                {new Date(`${workout.date}T00:00:00`)
-                                  .toLocaleDateString(undefined, { weekday: 'short' })
-                                  .toUpperCase()}
-                              </Text>
-                              <Text style={[type.caption, { color: colors.textSecondary, marginTop: 1 }]}>
-                                {new Date(`${workout.date}T00:00:00`).getDate()}
-                              </Text>
-                            </View>
-
-                            <View style={{ flex: 1 }}>
-                              <Row gap={6}>
-                                <Icon
-                                  name={WORKOUT_ICON[workout.type]}
-                                  size={14}
-                                  color={workoutTone(workout.type)}
-                                />
-                                <Text style={[type.bodyStrong, { fontSize: 14.5 }]}>
-                                  {WORKOUT_LABELS[workout.type]}
-                                </Text>
-                              </Row>
-                              {workout.prescription ? (
-                                <Caption
-                                  style={{ fontSize: 12, marginTop: 3, color: colors.textTertiary }}
-                                  numberOfLines={1}
-                                >
-                                  {workout.prescription}
-                                </Caption>
-                              ) : null}
-                            </View>
-
-                            {completed ? (
-                              <Row gap={4}>
-                                <Icon name="check" size={14} color={colors.success} strokeWidth={2.6} />
-                                <Text style={[type.caption, { color: colors.success }]}>
-                                  {distanceIn(completed.distanceM, unit).toFixed(1)}
-                                </Text>
-                              </Row>
-                            ) : workout.skipped ? (
-                              <Caption style={{ fontSize: 12, color: colors.textTertiary }}>Missed</Caption>
-                            ) : workout.targetDistanceM ? (
-                              <Caption style={{ fontSize: 12.5, color: colors.textSecondary }}>
-                                {distanceIn(workout.targetDistanceM, unit).toFixed(1)} {distanceLabel(unit)}
-                              </Caption>
-                            ) : null}
-                          </Row>
-                        </Pressable>
-                        {i < days.length - 1 ? <Divider /> : null}
-                      </View>
-                    );
-                  })}
+          {/* Calendar ---------------------------------------------------- */}
+          <View>
+            <SectionHeader
+              title="Calendar"
+              action={showFullPlan ? 'Next 3 weeks' : 'Full plan'}
+              onAction={() => setShowFullPlan((v) => !v)}
+            />
+            <View style={{ gap: space.lg }}>
+              {activePlan ? (
+                <Card style={{ borderColor: colors.cyanSoft }}>
+                  <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <View style={{ flex: 1 }}>
+                      <Row gap={space.sm}>
+                        <Icon name="community" size={14} color={colors.cyan} />
+                        <Label style={{ color: colors.cyan }}>Coached by {myCoach?.displayName ?? 'your coach'}</Label>
+                      </Row>
+                      <Text style={[type.subtitle, { marginTop: 4 }]}>{activePlan.name}</Text>
+                      {activePlan.focus ? (
+                        <Body style={{ fontSize: 13, lineHeight: 19, marginTop: 4 }}>{activePlan.focus}</Body>
+                      ) : null}
+                    </View>
+                    <Pill tone="cyan">
+                      {toISODate(weekStart) < activePlan.startsOn
+                        ? `Starts ${new Date(`${activePlan.startsOn}T00:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`
+                        : `Week ${planWeekIndex(activePlan, weekStart)} of ${planWeekCount(activePlan)}`}
+                    </Pill>
+                  </Row>
                 </Card>
-              </View>
-            );
-          })}
+              ) : null}
 
-          {block ? (
-            <Card>
-              <Row style={{ justifyContent: 'space-between' }}>
-                <Text style={type.subtitle}>{block.name}</Text>
-                <Pill tone="cyan">
-                  Week {Math.min(blockWeek, blockWeeks)} of {blockWeeks}
-                </Pill>
-              </Row>
-              <Body style={{ marginTop: space.sm, lineHeight: 21 }}>{block.focus}</Body>
-              <View style={[styles.track, { marginTop: space.lg }]}>
-                <View
-                  style={[
-                    styles.trackFill,
-                    {
-                      width: `${Math.min(100, (blockWeek / blockWeeks) * 100)}%`,
-                      backgroundColor: colors.cyan,
-                    },
-                  ]}
-                />
-              </View>
+              {(showFullPlan ? Array.from({ length: 16 }, (_, i) => i) : [0, 1, 2]).map((weekOffset) => {
+                const start = addDays(weekStart, weekOffset * 7);
+                const days = planWeekDays(plan, start).filter(
+                  (w): w is PlannedWorkout => w !== null && w.type !== 'rest',
+                );
+                if (days.length === 0) return null;
+                const weekDistance = days.reduce((a, w) => a + (w.targetDistanceM ?? 0), 0);
+
+                return (
+                  <View key={weekOffset}>
+                    <Row style={{ justifyContent: 'space-between', marginBottom: space.sm }}>
+                      <Label>
+                        {weekOffset === 0
+                          ? 'This week'
+                          : weekOffset === 1
+                            ? 'Next week'
+                            : `Week of ${new Date(start).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`}
+                      </Label>
+                      <Caption style={{ fontSize: 12, color: colors.textTertiary }}>
+                        {distanceIn(weekDistance, unit).toFixed(0)} {distanceLabel(unit)} planned
+                      </Caption>
+                    </Row>
+
+                    <Card padded={false}>
+                      {days.map((workout, i) => {
+                        const completed = workout.completedActivityId
+                          ? activityById(workout.completedActivityId)
+                          : undefined;
+                        return (
+                          <View key={workout.id}>
+                            <Pressable
+                              onPress={() => completed && router.push(`/activity/${completed.id}`)}
+                            >
+                              <Row style={{ padding: space.lg, paddingVertical: space.md }}>
+                                <View style={{ width: 34 }}>
+                                  <Text
+                                    style={[
+                                      type.label,
+                                      {
+                                        fontSize: 9.5,
+                                        color: workout.date === todayIso ? colors.accent : colors.textTertiary,
+                                      },
+                                    ]}
+                                  >
+                                    {new Date(`${workout.date}T00:00:00`)
+                                      .toLocaleDateString(undefined, { weekday: 'short' })
+                                      .toUpperCase()}
+                                  </Text>
+                                  <Text style={[type.caption, { color: colors.textSecondary, marginTop: 1 }]}>
+                                    {new Date(`${workout.date}T00:00:00`).getDate()}
+                                  </Text>
+                                </View>
+
+                                <View style={{ flex: 1 }}>
+                                  <Row gap={6}>
+                                    <Icon
+                                      name={WORKOUT_ICON[workout.type]}
+                                      size={14}
+                                      color={workoutTone(workout.type)}
+                                    />
+                                    <Text style={[type.bodyStrong, { fontSize: 14.5 }]} numberOfLines={1}>
+                                      {workout.source === 'coach' ? workout.title : WORKOUT_LABELS[workout.type]}
+                                    </Text>
+                                    {workout.keyWorkout ? <Pill tone="accent">Key</Pill> : null}
+                                    {workoutStatus(workout, todayIso) === 'modified' ? (
+                                      <Pill tone="warn">Modified</Pill>
+                                    ) : null}
+                                  </Row>
+                                  {workout.prescription ? (
+                                    <Caption
+                                      style={{ fontSize: 12, marginTop: 3, color: colors.textTertiary }}
+                                      numberOfLines={1}
+                                    >
+                                      {workout.prescription}
+                                    </Caption>
+                                  ) : null}
+                                </View>
+
+                                {completed ? (
+                                  <Row gap={4}>
+                                    <Icon name="check" size={14} color={colors.success} strokeWidth={2.6} />
+                                    <Text style={[type.caption, { color: colors.success }]}>
+                                      {distanceIn(completed.distanceM, unit).toFixed(1)}
+                                    </Text>
+                                  </Row>
+                                ) : workoutStatus(workout, todayIso) === 'missed' ? (
+                                  <Caption style={{ fontSize: 12, color: colors.danger }}>Missed</Caption>
+                                ) : workout.targetDistanceM ? (
+                                  <Caption style={{ fontSize: 12.5, color: colors.textSecondary }}>
+                                    {distanceIn(workout.targetDistanceM, unit).toFixed(1)} {distanceLabel(unit)}
+                                  </Caption>
+                                ) : null}
+                              </Row>
+                            </Pressable>
+                            {i < days.length - 1 ? <Divider /> : null}
+                          </View>
+                        );
+                      })}
+                    </Card>
+                  </View>
+                );
+              })}
+
+              {block ? (
+                <Card>
+                  <Row style={{ justifyContent: 'space-between' }}>
+                    <Text style={type.subtitle}>{block.name}</Text>
+                    <Pill tone="cyan">
+                      Week {Math.min(blockWeek, blockWeeks)} of {blockWeeks}
+                    </Pill>
+                  </Row>
+                  <Body style={{ marginTop: space.sm, lineHeight: 21 }}>{block.focus}</Body>
+                  <View style={[styles.track, { marginTop: space.lg }]}>
+                    <View
+                      style={[
+                        styles.trackFill,
+                        {
+                          width: `${Math.min(100, (blockWeek / blockWeeks) * 100)}%`,
+                          backgroundColor: colors.cyan,
+                        },
+                      ]}
+                    />
+                  </View>
+                </Card>
+              ) : null}
+            </View>
+          </View>
+
+          {/* Races ------------------------------------------------------- */}
+          <View>
+            <SectionHeader title="Races" action="Readiness analysis" onAction={() => router.push('/')} />
+            <Card padded={false}>
+              {profile.raceReadiness.map((r, i) => (
+                <View key={r.race.id}>
+                  <Pressable
+                    onPress={() => r.race.eventId && router.push(`/event/${r.race.eventId}`)}
+                    style={({ pressed }) => [
+                      { padding: space.lg, paddingVertical: space.md, gap: space.sm },
+                      pressed && { opacity: 0.7 },
+                    ]}
+                  >
+                    <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <View style={{ flex: 1 }}>
+                        <Row gap={space.sm}>
+                          <Text style={type.bodyStrong}>{r.race.name}</Text>
+                          {r.race.isGoalRace ? <Pill tone="accent">Goal race</Pill> : null}
+                        </Row>
+                        <Caption style={{ fontSize: 12, marginTop: 2, color: colors.textTertiary }}>
+                          {prDistanceLabel(r.race.distanceM)}
+                          {r.race.goalSeconds ? ` · target ${formatDuration(r.race.goalSeconds)}` : ''}
+                          {r.race.eventId
+                            ? ` · ${raceEntries.filter((e) => e.eventId === r.race.eventId && e.athleteId !== me.id).length} others from MOOV`
+                            : ''}
+                        </Caption>
+                      </View>
+                      <View style={{ alignItems: 'flex-end', marginLeft: space.md }}>
+                        <Text style={[type.metricSmall, { fontSize: 20, color: r.race.isGoalRace ? colors.accent : colors.text }]}>
+                          {r.daysUntil}
+                        </Text>
+                        <Caption style={{ fontSize: 11, color: colors.textTertiary }}>days</Caption>
+                      </View>
+                    </Row>
+                    <Row gap={space.sm}>
+                      <View style={[styles.track, { flex: 1, height: 5 }]}>
+                        <View
+                          style={[
+                            styles.trackFill,
+                            {
+                              width: `${r.percent}%`,
+                              backgroundColor:
+                                r.percent >= 80 ? colors.success : r.percent >= 60 ? colors.warn : colors.danger,
+                            },
+                          ]}
+                        />
+                      </View>
+                      <Caption style={{ fontSize: 11.5, color: colors.textSecondary, width: 74, textAlign: 'right' }}>
+                        {r.percent}% ready
+                      </Caption>
+                    </Row>
+                  </Pressable>
+                  {i < profile.raceReadiness.length - 1 ? <Divider /> : null}
+                </View>
+              ))}
+            </Card>
+          </View>
+
+          {/* This week's goal -------------------------------------------- */}
+          <SectionHeader title="This week" />
+          {profile.goal ? (
+            <Card style={{ alignItems: 'center', paddingVertical: space.xl }}>
+              <ProgressRing progress={profile.goal.ratio} size={164} strokeWidth={13}>
+                <Text style={[type.display, { fontSize: 42, lineHeight: 44 }]}>
+                  {distanceIn(profile.goal.currentValue, unit).toFixed(1)}
+                </Text>
+                <Text style={[type.caption, { color: colors.textTertiary, marginTop: 2 }]}>
+                  of {distanceIn(profile.goal.targetValue, unit).toFixed(0)} {distanceLabel(unit)}
+                </Text>
+              </ProgressRing>
+              <Caption style={{ marginTop: space.lg, color: colors.textTertiary }}>
+                This week ·{' '}
+                {profile.goal.isComplete
+                  ? 'goal met'
+                  : `${distanceIn(profile.goal.remaining, unit).toFixed(1)} ${distanceLabel(unit)} to go`}
+              </Caption>
             </Card>
           ) : null}
-        </View>
+
+        </>
       ) : null}
 
     </Screen>
   );
 }
+
+const planWeekCount = (p: { startsOn: string; endsOn: string }) =>
+  Math.max(1, Math.ceil((new Date(`${p.endsOn}T00:00:00`).getTime() - new Date(`${p.startsOn}T00:00:00`).getTime() + 86_400_000) / (7 * 86_400_000)));
+const planWeekIndex = (p: { startsOn: string }, weekStart: Date) =>
+  Math.max(1, Math.round((weekStart.getTime() - new Date(`${p.startsOn}T00:00:00`).getTime()) / (7 * 86_400_000)) + 1);
 
 const checkpointLabel = (c: RoadmapCheckpoint) =>
   c.status === 'done' ? 'Banked' : c.status === 'missed' ? 'Missed' : c.status === 'current' ? 'Today' : 'Ahead';

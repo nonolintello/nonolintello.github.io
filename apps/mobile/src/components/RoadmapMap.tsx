@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef } from 'react';
-import { Animated, Easing, Pressable, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, PanResponder, Text, View } from 'react-native';
 import Svg, { Circle, G, Line, Path, Text as SvgText } from 'react-native-svg';
 import type { Roadmap, RoadmapCheckpoint } from '@ai/core';
 import { colors, radius, space, type } from '../theme/tokens';
@@ -193,28 +193,149 @@ export const RoadmapMap = ({
   const start = at(0);
   const selected = markers.find((m) => m.checkpoint.id === selectedId) ?? null;
 
-  const handlePress = (x: number, y: number) => {
-    // Nearest marker within reach wins; otherwise the tap clears selection.
+  // Dense samples of the road so a finger anywhere near it snaps to a fraction.
+  const samples = useMemo(() => {
+    const out: { t: number; point: Point }[] = [];
+    for (let i = 0; i <= 400; i++) out.push({ t: i / 400, point: at(i / 400) });
+    return out;
+  }, [at]);
+
+  const nearestT = (x: number, y: number) => {
+    let best = samples[0] as { t: number; point: Point };
+    let bestD = Number.POSITIVE_INFINITY;
+    for (const s of samples) {
+      const d = Math.hypot(s.point.x - x, s.point.y - y);
+      if (d < bestD) {
+        bestD = d;
+        best = s;
+      }
+    }
+    return { t: best.t, distance: bestD };
+  };
+
+  const nearestMarker = (x: number, y: number) => {
     let best: { id: string; d: number } | null = null;
     for (const m of markers) {
       const d = Math.hypot(m.point.x - x, m.point.y - y);
       if (d < 28 && (!best || d < best.d)) best = { id: m.checkpoint.id, d };
     }
-    onSelect?.(best?.id ?? null);
+    return best?.id ?? null;
   };
 
-  // Callout placement: above the marker, flipped below near the top edge and
-  // clamped horizontally so it never leaves the card.
+  // Scrubbing: drag along the road to move a cursor and read the journey at
+  // any point. A short press without movement is a tap on a marker.
+  const [cursorT, setCursorT] = useState<number | null>(null);
+  const containerRef = useRef<View>(null);
+  // Window position of the map, refreshed at the start of every gesture so
+  // page coordinates can be turned into map coordinates on every platform.
+  const gesture = useRef({ left: 0, top: 0, moved: 0, startPageX: 0, startPageY: 0 });
+  const latest = useRef({ nearestT, nearestMarker, onSelect });
+  latest.current = { nearestT, nearestMarker, onSelect };
+
+  const pan = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderTerminationRequest: () => false,
+        onPanResponderGrant: (e) => {
+          const { pageX, pageY } = e.nativeEvent;
+          gesture.current = { ...gesture.current, moved: 0, startPageX: pageX, startPageY: pageY };
+          containerRef.current?.measureInWindow((left, top) => {
+            gesture.current.left = left;
+            gesture.current.top = top;
+          });
+        },
+        onPanResponderMove: (e) => {
+          const g = gesture.current;
+          const { pageX, pageY } = e.nativeEvent;
+          g.moved = Math.max(g.moved, Math.hypot(pageX - g.startPageX, pageY - g.startPageY));
+          if (g.moved > 6) {
+            const { t, distance } = latest.current.nearestT(pageX - g.left, pageY - g.top);
+            if (distance < 60) setCursorT(t);
+          }
+        },
+        onPanResponderRelease: (e) => {
+          const g = gesture.current;
+          if (g.moved <= 6) {
+            const hit = latest.current.nearestMarker(e.nativeEvent.pageX - g.left, e.nativeEvent.pageY - g.top);
+            setCursorT(null);
+            latest.current.onSelect?.(hit);
+          }
+        },
+      }),
+    [],
+  );
+
+  const cursor = cursorT != null ? at(cursorT) : null;
+  const cursorInfo = useMemo(() => {
+    if (cursorT == null) return null;
+    if (roadmap.kind === 'race') {
+      const startDate = new Date(`${roadmap.startsOn}T00:00:00`);
+      const day = new Date(startDate);
+      day.setDate(day.getDate() + Math.round(cursorT * roadmap.daysTotal));
+      const week = Math.floor((cursorT * roadmap.daysTotal) / 7) + 1;
+      const weeks = Math.ceil(roadmap.daysTotal / 7);
+      const nearby = roadmap.checkpoints
+        .filter((c) => Math.abs(c.position - cursorT) < 0.025)
+        .sort((a, b) => Math.abs(a.position - cursorT) - Math.abs(b.position - cursorT))[0];
+      return {
+        eyebrow: `Week ${Math.min(week, weeks)} of ${weeks} · ${Math.round(cursorT * 100)}%`,
+        title: day.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }),
+        detail: nearby ? nearby.title : cursorT < roadmap.position ? 'Behind you' : 'Still ahead',
+      };
+    }
+    const nearby = roadmap.checkpoints
+      .filter((c) => Math.abs(c.position - cursorT) < 0.04)
+      .sort((a, b) => Math.abs(a.position - cursorT) - Math.abs(b.position - cursorT))[0];
+    return {
+      eyebrow: `${Math.round(cursorT * 100)}% of the ladder`,
+      title: nearby?.title ?? 'Between levels',
+      detail: nearby?.detail ?? '',
+    };
+  }, [cursorT, roadmap]);
+
+  // Callout placement: above its anchor, flipped below near the top edge and
+  // clamped horizontally so it never leaves the card. The scrub cursor wins
+  // over a selected marker while a finger is down.
+  const anchor = cursor ?? selected?.point ?? null;
   const calloutW = Math.min(220, width - space.lg * 2);
-  const calloutLeft = selected ? Math.min(Math.max(selected.point.x - calloutW / 2, 6), width - calloutW - 6) : 0;
-  const calloutAbove = selected ? selected.point.y > 84 : true;
+  const calloutLeft = anchor ? Math.min(Math.max(anchor.x - calloutW / 2, 6), width - calloutW - 6) : 0;
+  const calloutAbove = anchor ? anchor.y > 84 : true;
+  const callout = cursorInfo
+    ? { ...cursorInfo, color: colors.text }
+    : selected
+      ? {
+          eyebrow:
+            (selected.checkpoint.status === 'done'
+              ? 'Banked'
+              : selected.checkpoint.status === 'missed'
+                ? 'Missed'
+                : selected.checkpoint.kind === 'race'
+                  ? 'Destination'
+                  : 'Ahead') +
+            (roadmap.kind === 'race'
+              ? ` · ${new Date(`${selected.checkpoint.date}T00:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`
+              : ''),
+          title: selected.checkpoint.title,
+          detail: selected.checkpoint.detail,
+          color: selected.color,
+        }
+      : null;
 
   return (
-    <View style={{ width, height }}>
-      <Pressable
-        style={{ width, height }}
-        onPress={(e) => handlePress(e.nativeEvent.locationX, e.nativeEvent.locationY)}
-      >
+    <View
+      ref={containerRef}
+      // userSelect stops a drag on web from highlighting the SVG labels.
+      style={{ width, height, userSelect: 'none' } as object}
+      onLayout={() =>
+        containerRef.current?.measureInWindow((l, t) => {
+          gesture.current.left = l;
+          gesture.current.top = t;
+        })
+      }
+    >
+      <View style={{ width, height }} {...pan.panHandlers}>
         <Svg width={width} height={height} pointerEvents="none">
           {/* Road: faint ahead, solid behind, with a soft halo on the travelled part. */}
           <Path d={toD(split.todo)} stroke={colors.borderStrong} strokeWidth={4} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="1 7" />
@@ -276,46 +397,45 @@ export const RoadmapMap = ({
           {/* You are here. */}
           <Circle cx={split.here.x} cy={split.here.y} r={14} fill={colors.accent} fillOpacity={0.14} />
           <Circle cx={split.here.x} cy={split.here.y} r={7} fill={colors.accent} stroke={colors.bg} strokeWidth={2.5} />
+
+          {/* Scrub cursor. */}
+          {cursor ? (
+            <G>
+              <Circle cx={cursor.x} cy={cursor.y} r={12} fill={colors.text} fillOpacity={0.12} />
+              <Circle cx={cursor.x} cy={cursor.y} r={5.5} fill={colors.text} stroke={colors.bg} strokeWidth={2} />
+            </G>
+          ) : null}
         </Svg>
-      </Pressable>
+      </View>
 
       <Pulse x={split.here.x} y={split.here.y} />
 
-      {/* Callout for the selected checkpoint. */}
-      {selected ? (
+      {/* Callout for the scrub cursor or the selected checkpoint. */}
+      {callout && anchor ? (
         <View
           pointerEvents="none"
           style={{
             position: 'absolute',
             left: calloutLeft,
             width: calloutW,
-            ...(calloutAbove ? { bottom: height - selected.point.y + 14 } : { top: selected.point.y + 14 }),
+            ...(calloutAbove ? { bottom: height - anchor.y + 14 } : { top: anchor.y + 14 }),
             paddingHorizontal: space.md,
             paddingVertical: space.sm,
             borderRadius: radius.sm,
             backgroundColor: colors.surfaceRaised,
             borderWidth: 1,
-            borderColor: `${selected.color}88`,
+            borderColor: `${callout.color}88`,
           }}
         >
-          <Text style={[type.label, { color: selected.color, fontSize: 9 }]}>
-            {selected.checkpoint.status === 'done'
-              ? 'Banked'
-              : selected.checkpoint.status === 'missed'
-                ? 'Missed'
-                : selected.checkpoint.kind === 'race'
-                  ? 'Destination'
-                  : 'Ahead'}
-            {roadmap.kind === 'race'
-              ? ` · ${new Date(`${selected.checkpoint.date}T00:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`
-              : ''}
-          </Text>
+          <Text style={[type.label, { color: callout.color, fontSize: 9 }]}>{callout.eyebrow}</Text>
           <Text style={[type.bodyStrong, { fontSize: 13.5, marginTop: 2 }]} numberOfLines={1}>
-            {selected.checkpoint.title}
+            {callout.title}
           </Text>
-          <Text style={[type.caption, { fontSize: 11.5, marginTop: 2, color: colors.textSecondary }]} numberOfLines={2}>
-            {selected.checkpoint.detail}
-          </Text>
+          {callout.detail ? (
+            <Text style={[type.caption, { fontSize: 11.5, marginTop: 2, color: colors.textSecondary }]} numberOfLines={2}>
+              {callout.detail}
+            </Text>
+          ) : null}
         </View>
       ) : null}
     </View>

@@ -277,6 +277,67 @@ export interface PlannedWorkout {
   /** Set once a logged activity is matched to this session. */
   completedActivityId?: string;
   skipped?: boolean;
+  /** The coach-assigned plan this session belongs to, if any. */
+  planId?: string;
+  /** Who prescribed it. Self-planned sessions have no coach behind them. */
+  source?: 'self' | 'coach';
+  /** A milestone the plan is built around — appears on the athlete's roadmap. */
+  keyWorkout?: boolean;
+  /** The athlete changed the session from what was prescribed. */
+  modified?: boolean;
+  modifiedNote?: string;
+}
+
+/** Derived, never stored: what happened to a prescribed session. */
+export type WorkoutStatus = 'completed' | 'modified' | 'missed' | 'upcoming' | 'today';
+
+export const workoutStatus = (workout: PlannedWorkout, todayIso: string): WorkoutStatus => {
+  if (workout.completedActivityId) return workout.modified ? 'modified' : 'completed';
+  if (workout.date === todayIso) return 'today';
+  // A rest day cannot be missed; any other past session without an activity was.
+  if (workout.date < todayIso) return workout.type === 'rest' ? 'completed' : 'missed';
+  return workout.modified ? 'modified' : 'upcoming';
+};
+
+/**
+ * A coach account. Coaches are people too, but a coach need not be an athlete
+ * on MOOV, so the account is its own record rather than a flag on Athlete.
+ */
+export interface Coach {
+  id: string;
+  displayName: string;
+  email: string;
+  /** Certification or one-line credential, shown to athletes. */
+  credential?: string;
+  /** If the coach also trains on MOOV, their athlete record. */
+  athleteId?: string;
+  createdAt: string;
+}
+
+export type CoachLinkStatus = 'invited' | 'connected';
+
+/** The coaching relationship. Data flows to the coach only once connected. */
+export interface CoachAthleteLink {
+  coachId: string;
+  athleteId: string;
+  status: CoachLinkStatus;
+  invitedAt: string;
+  connectedAt?: string;
+}
+
+/** A block of prescribed sessions. The sessions themselves are PlannedWorkouts. */
+export interface TrainingPlan {
+  id: string;
+  coachId: string;
+  athleteId: string;
+  name: string;
+  startsOn: string;
+  endsOn: string;
+  targetRaceId?: string;
+  /** Coach's framing for the athlete: what this block is for. */
+  focus?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Race {

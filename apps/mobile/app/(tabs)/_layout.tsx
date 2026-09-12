@@ -12,7 +12,7 @@ import { colors, hairline, radius, space, type } from '../../src/theme/tokens';
  */
 const TABS: { name: string; label: string; icon: IconName }[] = [
   { name: 'index', label: 'Intelligence', icon: 'pulse' },
-  { name: 'training', label: 'Training', icon: 'target' },
+  { name: 'journey', label: 'Journey', icon: 'target' },
   { name: 'community', label: 'Community', icon: 'community' },
   { name: 'discover', label: 'Discover', icon: 'compass' },
 ];
@@ -101,7 +101,7 @@ export default function TabsLayout() {
   return (
     <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} />}>
       <Tabs.Screen name="index" />
-      <Tabs.Screen name="training" />
+      <Tabs.Screen name="journey" />
       <Tabs.Screen name="community" />
       <Tabs.Screen name="discover" />
     </Tabs>
