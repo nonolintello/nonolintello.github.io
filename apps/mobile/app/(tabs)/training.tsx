@@ -285,164 +285,60 @@ export default function TrainingScreen() {
 
           {/* Races ------------------------------------------------------- */}
           <View>
-            <SectionHeader title="Races" />
-            <View style={{ gap: space.md }}>
-              {profile.raceReadiness.map((r) => (
-                <Card
-                  key={r.race.id}
-                  style={r.race.isGoalRace ? { borderColor: colors.accentSoft } : undefined}
-                >
-                  <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <View style={{ flex: 1 }}>
-                      <Row gap={space.sm}>
-                        <Text style={type.subtitle}>{r.race.name}</Text>
-                        {r.race.isGoalRace ? <Pill tone="accent">Goal race</Pill> : null}
-                      </Row>
-                      <Caption style={{ marginTop: 4, color: colors.textTertiary }}>
-                        {prDistanceLabel(r.race.distanceM)}
-                        {r.race.goalSeconds ? ` · target ${formatDuration(r.race.goalSeconds)}` : ''}
-                      </Caption>
-                    </View>
-                    <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={[type.metric, { color: r.race.isGoalRace ? colors.accent : colors.text }]}>
-                        {r.daysUntil}
-                      </Text>
-                      <Caption style={{ fontSize: 11, color: colors.textTertiary }}>days</Caption>
-                    </View>
-                  </Row>
-
-                  <Divider style={{ marginVertical: space.lg }} />
-
-                  <Row style={{ justifyContent: 'space-between', marginBottom: 6 }}>
-                    <Label>Race readiness</Label>
-                    <Text style={[type.metricSmall, { fontSize: 17 }]}>{r.percent}%</Text>
-                  </Row>
-                  <View style={styles.track}>
-                    <View
-                      style={[
-                        styles.trackFill,
-                        {
-                          width: `${r.percent}%`,
-                          backgroundColor:
-                            r.percent >= 80 ? colors.success : r.percent >= 60 ? colors.warn : colors.danger,
-                        },
-                      ]}
-                    />
-                  </View>
-
-                  <View style={{ gap: space.sm, marginTop: space.lg }}>
-                    {r.factors.map((f) => (
-                      <Row key={f.key} style={{ justifyContent: 'space-between' }}>
-                        <Caption style={{ color: colors.textSecondary, flex: 1 }}>{f.label}</Caption>
+            <SectionHeader title="Races" action="Readiness analysis" onAction={() => router.push('/')} />
+            <Card padded={false}>
+              {profile.raceReadiness.map((r, i) => (
+                <View key={r.race.id}>
+                  <Pressable
+                    onPress={() => r.race.eventId && router.push(`/event/${r.race.eventId}`)}
+                    style={({ pressed }) => [
+                      { padding: space.lg, paddingVertical: space.md, gap: space.sm },
+                      pressed && { opacity: 0.7 },
+                    ]}
+                  >
+                    <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <View style={{ flex: 1 }}>
                         <Row gap={space.sm}>
-                          <View style={[styles.miniTrack]}>
-                            <View
-                              style={[
-                                styles.trackFill,
-                                {
-                                  width: `${f.score}%`,
-                                  backgroundColor: f.score >= 70 ? colors.success : colors.warn,
-                                },
-                              ]}
-                            />
-                          </View>
-                          <Text
-                            style={[
-                              type.caption,
-                              { width: 26, textAlign: 'right', color: colors.textTertiary },
-                            ]}
-                          >
-                            {Math.round(f.score)}
-                          </Text>
+                          <Text style={type.bodyStrong}>{r.race.name}</Text>
+                          {r.race.isGoalRace ? <Pill tone="accent">Goal race</Pill> : null}
                         </Row>
-                      </Row>
-                    ))}
-                  </View>
-
-                  {r.limiter ? (
-                    <Row gap={space.sm} style={{ marginTop: space.md, alignItems: 'flex-start' }}>
-                      <Icon name="target" size={13} color={colors.accent} />
-                      <Body style={{ flex: 1, fontSize: 13, lineHeight: 19 }}>
-                        {r.limiter.label} is the limiter — {r.limiter.detail.toLowerCase()}.
-                      </Body>
-                    </Row>
-                  ) : null}
-
-                  {r.race.eventId ? (
-                    <StartListLink
-                      count={raceEntries.filter((e) => e.eventId === r.race.eventId && e.athleteId !== me.id).length}
-                      onPress={() => router.push(`/event/${r.race.eventId}`)}
-                    />
-                  ) : null}
-                </Card>
-              ))}
-            </View>
-          </View>
-
-          {/* Season objectives ------------------------------------------- */}
-          <View>
-            <SectionHeader title="Season goals" />
-            <View style={{ gap: space.md }}>
-              {profile.objectives.map((o) => (
-                <Card key={o.goal.id}>
-                  <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={type.subtitle}>{o.goal.title}</Text>
-                      {o.daysRemaining != null && o.daysRemaining > 0 ? (
-                        <Caption style={{ marginTop: 3, color: colors.textTertiary }}>
-                          {o.daysRemaining} days remaining
+                        <Caption style={{ fontSize: 12, marginTop: 2, color: colors.textTertiary }}>
+                          {prDistanceLabel(r.race.distanceM)}
+                          {r.race.goalSeconds ? ` · target ${formatDuration(r.race.goalSeconds)}` : ''}
+                          {r.race.eventId
+                            ? ` · ${raceEntries.filter((e) => e.eventId === r.race.eventId && e.athleteId !== me.id).length} others from MOOV`
+                            : ''}
                         </Caption>
-                      ) : null}
-                    </View>
-                    <Pill tone={o.onTrack ? 'success' : 'warn'}>
-                      {o.onTrack ? 'On track' : 'Behind'}
-                    </Pill>
-                  </Row>
-
-                  {o.targetSeconds && o.predictedSeconds ? (
-                    <Row style={{ justifyContent: 'space-between', marginTop: space.lg }}>
-                      <View>
-                        <Label>Predicted</Label>
-                        <Text style={[type.metric, { marginTop: 4 }]}>
-                          {formatDuration(o.predictedSeconds)}
-                        </Text>
                       </View>
-                      <View style={{ alignItems: 'flex-end' }}>
-                        <Label>Target</Label>
-                        <Text style={[type.metric, { marginTop: 4, color: colors.accent }]}>
-                          {formatDuration(o.targetSeconds)}
+                      <View style={{ alignItems: 'flex-end', marginLeft: space.md }}>
+                        <Text style={[type.metricSmall, { fontSize: 20, color: r.race.isGoalRace ? colors.accent : colors.text }]}>
+                          {r.daysUntil}
                         </Text>
+                        <Caption style={{ fontSize: 11, color: colors.textTertiary }}>days</Caption>
                       </View>
                     </Row>
-                  ) : null}
-
-                  <View style={{ marginTop: space.lg }}>
-                    <Row style={{ justifyContent: 'space-between', marginBottom: 6 }}>
-                      <Caption style={{ color: colors.textTertiary }}>Progress</Caption>
-                      <Caption style={{ color: colors.text, fontWeight: '700' }}>
-                        {Math.round(o.progress * 100)}%
+                    <Row gap={space.sm}>
+                      <View style={[styles.track, { flex: 1, height: 5 }]}>
+                        <View
+                          style={[
+                            styles.trackFill,
+                            {
+                              width: `${r.percent}%`,
+                              backgroundColor:
+                                r.percent >= 80 ? colors.success : r.percent >= 60 ? colors.warn : colors.danger,
+                            },
+                          ]}
+                        />
+                      </View>
+                      <Caption style={{ fontSize: 11.5, color: colors.textSecondary, width: 74, textAlign: 'right' }}>
+                        {r.percent}% ready
                       </Caption>
                     </Row>
-                    <View style={styles.track}>
-                      <View
-                        style={[
-                          styles.trackFill,
-                          {
-                            width: `${Math.max(2, o.progress * 100)}%`,
-                            backgroundColor: o.onTrack ? colors.success : colors.accent,
-                          },
-                        ]}
-                      />
-                    </View>
-                  </View>
-
-                  <Row gap={space.sm} style={{ marginTop: space.md, alignItems: 'flex-start' }}>
-                    <Icon name="sparkle" size={13} color={colors.violet} />
-                    <Body style={{ flex: 1, fontSize: 13, lineHeight: 19 }}>{o.summary}</Body>
-                  </Row>
-                </Card>
+                  </Pressable>
+                  {i < profile.raceReadiness.length - 1 ? <Divider /> : null}
+                </View>
               ))}
-            </View>
+            </Card>
           </View>
 
           {/* This week's goal -------------------------------------------- */}
@@ -925,26 +821,6 @@ export default function TrainingScreen() {
 
 const checkpointLabel = (c: RoadmapCheckpoint) =>
   c.status === 'done' ? 'Banked' : c.status === 'missed' ? 'Missed' : c.status === 'current' ? 'Today' : 'Ahead';
-
-/** Who else from MOOV is on this start list — the social half of a race card. */
-const StartListLink = ({ count, onPress }: { count: number; onPress: () => void }) => (
-  <Pressable onPress={onPress} style={({ pressed }) => [{ marginTop: space.lg }, pressed && { opacity: 0.7 }]}>
-    <Row style={{ justifyContent: 'space-between' }}>
-      <Row gap={space.sm}>
-        <Icon name="community" size={14} color={colors.cyan} />
-        <Caption style={{ color: colors.textSecondary }}>
-          {count === 0
-            ? 'Nobody else from MOOV yet'
-            : `${count} ${count === 1 ? 'other' : 'others'} from MOOV racing`}
-        </Caption>
-      </Row>
-      <Row gap={4}>
-        <Caption style={{ color: colors.accent, fontWeight: '700' }}>Start list</Caption>
-        <Icon name="chevronRight" size={14} color={colors.accent} />
-      </Row>
-    </Row>
-  </Pressable>
-);
 
 const SegmentedTabs = <T extends string>({
   value,

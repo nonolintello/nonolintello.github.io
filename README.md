@@ -14,8 +14,8 @@ The product is built as a loop, not a set of features:
 
 | Tab | Question | What it does |
 | --- | --- | --- |
-| **Intelligence** | What is happening to me? | Athlete status, fitness/recovery/fatigue/load, proactive insights, Ask MOOV |
-| **Training** | What should I do about it? | Today's session, calendar, plans, goals, races, adaptive recommendations |
+| **Intelligence** | What is happening to me? | Athlete status, fitness/recovery/fatigue/load, proactive insights, race readiness, goal projections, Ask MOOV |
+| **Training** | What should I do about it? | Roadmap to the goal race, today's session, calendar, adaptive recommendations |
 | **Community** | What are people around me doing? | Feed with real context, challenges, leaderboards, athlete profiles |
 | **Discover** | What else can I explore? | Creators, athletes, clubs, events, routes |
 
