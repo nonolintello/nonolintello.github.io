@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brief client — Nonovation</title>
+<meta name="description" content="Transmettez à Nonovation les informations nécessaires pour démarrer la réalisation de votre site.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="identity/04-nonovation-avatar-favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/legal.css">
+</head>
+<body>
+
+<header class="site-header is-scrolled" id="siteHeader">
+  <div class="wrap header-inner">
+    <a href="index.html" class="brand" aria-label="Nonovation — accueil">
+      <img src="identity/06-nonovation-logo-sombre_transparent.svg" alt="Nonovation" class="brand-logo">
+    </a>
+    <a href="index.html#contact" class="btn btn--ghost header-cta" style="margin-left:auto;">Une question ?</a>
+  </div>
+</header>
+
+<main class="legal">
+  <div class="wrap legal-wrap">
+    <p class="kicker">Lancement de votre projet</p>
+    <h1>Votre brief client</h1>
+    <p class="legal-updated">
+      Ces informations nous permettent de démarrer la conception de votre site. Prenez votre temps.
+    </p>
+
+    <div class="form-callout">
+      <strong>Aucun champ n'est obligatoire.</strong> Laissez vide tout ce que vous ne savez pas
+      encore ou ne souhaitez pas renseigner maintenant — on complétera ensemble lors de nos
+      échanges. Vous pourrez aussi revenir remplir ce formulaire plus tard.
+    </div>
+
+    <form class="contact-form contact-form--paper" data-reveal action="https://formspree.io/f/xkjnjggo" method="POST">
+      <input type="hidden" name="_subject" value="Brief client — Nonovation">
+      <input type="text" name="_gotcha" class="brief-honeypot" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+      <fieldset class="form-fieldset">
+        <legend class="form-legend">1. Le client</legend>
+
+        <div class="form-field">
+          <label for="briefCompany">Nom de l'entreprise</label>
+          <input type="text" id="briefCompany" name="Nom de l'entreprise">
+        </div>
+
+        <div class="form-row">
+          <div class="form-field">
+            <label for="briefLegalForm">Forme juridique</label>
+            <select id="briefLegalForm" name="Forme juridique">
+              <option value="">— Sélectionner —</option>
+              <option>EI</option>
+              <option>EURL</option>
+              <option>SARL</option>
+              <option>SASU</option>
+              <option>SAS</option>
+              <option>Autre</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="briefSiret">SIRET</label>
+            <input type="text" id="briefSiret" name="SIRET" inputmode="numeric" maxlength="14" placeholder="14 chiffres">
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="briefAddress">Adresse du siège</label>
+          <input type="text" id="briefAddress" name="Adresse du siège">
+        </div>
+
+        <div class="form-row">
+          <div class="form-field">
+            <label for="briefContactName">Nom et prénom du responsable</label>
+            <input type="text" id="briefContactName" name="Nom et prénom du responsable">
+          </div>
+          <div class="form-field">
+            <label for="briefEmail">Email</label>
+            <input type="email" id="briefEmail" name="email" placeholder="vous@exemple.fr">
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="briefPhone">Téléphone</label>
+          <input type="tel" id="briefPhone" name="Téléphone">
+        </div>
+      </fieldset>
+
+      <fieldset class="form-fieldset">
+        <legend class="form-legend">2. Nom de domaine</legend>
+
+        <div class="form-field">
+          <label for="briefDomain">Nom de domaine souhaité</label>
+          <input type="text" id="briefDomain" name="Nom de domaine souhaité" placeholder="exemple.fr">
+        </div>
+
+        <div class="form-row">
+          <div class="form-field">
+            <label for="briefDomainAlt1">Alternative 1</label>
+            <input type="text" id="briefDomainAlt1" name="Alternative 1">
+          </div>
+          <div class="form-field">
+            <label for="briefDomainAlt2">Alternative 2</label>
+            <input type="text" id="briefDomainAlt2" name="Alternative 2">
+          </div>
+        </div>
+
+        <label class="form-checkbox">
+          <input type="checkbox" name="Accepte d'être titulaire du nom de domaine" value="Oui">
+          <span>J'accepte d'être titulaire du nom de domaine et de valider l'email de vérification qui me sera envoyé.</span>
+        </label>
+      </fieldset>
+
+      <fieldset class="form-fieldset">
+        <legend class="form-legend">3. Contenu du site</legend>
+
+        <div class="form-field">
+          <label for="briefActivity">Présentation de l'activité <span>(quelques lignes)</span></label>
+          <textarea id="briefActivity" name="Présentation de l'activité" rows="4"></textarea>
+        </div>
+
+        <div class="form-field">
+          <label for="briefServices">Services / produits à mettre en avant</label>
+          <textarea id="briefServices" name="Services / produits à mettre en avant" rows="4"></textarea>
+        </div>
+
+        <div class="form-field">
+          <label for="briefCoords">Coordonnées à afficher <span>(adresse, téléphone, horaires)</span></label>
+          <textarea id="briefCoords" name="Coordonnées à afficher" rows="3"></textarea>
+        </div>
+
+        <div class="form-field">
+          <label for="briefSocial">Réseaux sociaux</label>
+          <input type="text" id="briefSocial" name="Réseaux sociaux" placeholder="Instagram, Facebook, LinkedIn…">
+        </div>
+
+        <div class="form-field">
+          <label for="briefSiteEmail">Email de réception des messages du site</label>
+          <input type="email" id="briefSiteEmail" name="Email de réception des messages du site">
+        </div>
+
+        <div class="form-field">
+          <label for="briefFiles">Lien vers les fichiers <span>(logo, photos, textes — Google Drive, WeTransfer…)</span></label>
+          <input type="url" id="briefFiles" name="Lien vers les fichiers" placeholder="https://…">
+        </div>
+
+        <div class="form-field">
+          <label for="briefColors">Couleurs ou charte existante</label>
+          <input type="text" id="briefColors" name="Couleurs ou charte existante">
+        </div>
+
+        <div class="form-field">
+          <label for="briefInspiration">Sites qu'il aime <span>(inspiration)</span></label>
+          <textarea id="briefInspiration" name="Sites qu'il aime (inspiration)" rows="3"></textarea>
+        </div>
+      </fieldset>
+
+      <fieldset class="form-fieldset">
+        <legend class="form-legend">4. Mentions légales</legend>
+
+        <div class="form-field">
+          <label for="briefDirector">Directeur de publication</label>
+          <input type="text" id="briefDirector" name="Directeur de publication">
+        </div>
+
+        <div class="form-row">
+          <div class="form-field">
+            <label for="briefCapital">Capital social <span>(si société)</span></label>
+            <input type="text" id="briefCapital" name="Capital social">
+          </div>
+          <div class="form-field">
+            <label for="briefVat">N° TVA intracommunautaire <span>(si applicable)</span></label>
+            <input type="text" id="briefVat" name="N° TVA intracommunautaire">
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="form-fieldset">
+        <legend class="form-legend">5. Options</legend>
+
+        <div class="form-field">
+          <label for="briefProEmails">Adresses email pro souhaitées <span>(ex : contact@, prenom@)</span></label>
+          <input type="text" id="briefProEmails" name="Adresses email pro souhaitées">
+        </div>
+
+        <div class="form-field">
+          <label for="briefNotes">Remarques</label>
+          <textarea id="briefNotes" name="Remarques" rows="4"></textarea>
+        </div>
+
+        <label class="form-checkbox">
+          <input type="checkbox" name="Accepte l'utilisation des données pour le projet" value="Oui">
+          <span>J'accepte que mes données soient utilisées pour la réalisation de mon projet.</span>
+        </label>
+      </fieldset>
+
+      <div class="form-footer">
+        <button type="submit" class="btn btn--gold">Envoyer mon brief</button>
+        <p class="form-note">
+          Vos informations ne servent qu'à la réalisation de votre projet. En savoir plus sur la
+          <a href="confidentialite.html">politique de confidentialité</a>.
+        </p>
+      </div>
+    </form>
+
+    <p class="legal-back"><a href="index.html">&larr; Retour à l'accueil</a></p>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <img src="identity/02-nonovation-logo-sombre.svg" alt="Nonovation" class="footer-logo">
+    <p>&copy; <span id="year"></span> Nonovation. Sites sur mesure, pensés pour vous.</p>
+    <nav class="footer-legal">
+      <a href="brief-client.html">Brief client</a>
+      <a href="mentions-legales.html">Mentions légales</a>
+      <a href="confidentialite.html">Confidentialité</a>
+      <a href="cgv.html">CGV</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>

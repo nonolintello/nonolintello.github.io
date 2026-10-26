@@ -433,6 +433,87 @@ h3 { font-size: 1.25rem; font-weight: 700; }
 .form-status.is-ok { color: var(--gold-soft); }
 .form-status.is-error { color: #e0836a; }
 
+/* contact form — paper variant (used on brief-client.html) */
+.contact-form--paper {
+  max-width: 100%;
+}
+.contact-form--paper .form-field label { color: var(--on-paper); }
+.contact-form--paper .form-field label span { color: var(--on-paper-dim); }
+.contact-form--paper .form-field input,
+.contact-form--paper .form-field select,
+.contact-form--paper .form-field textarea {
+  border-color: var(--on-paper-border);
+  background: #fff;
+  color: var(--on-paper);
+}
+.contact-form--paper .form-field input:focus,
+.contact-form--paper .form-field select:focus,
+.contact-form--paper .form-field textarea:focus {
+  border-color: var(--gold);
+}
+.contact-form--paper .form-note { color: var(--on-paper-dim); max-width: none; }
+.contact-form--paper .form-status.is-ok { color: #2f7a4d; }
+.contact-form--paper .form-status.is-error { color: #b3451f; }
+
+.form-field select {
+  width: 100%;
+  padding: 0.85em 1.1em;
+  border-radius: 12px;
+  border: 1.5px solid var(--on-ink-border);
+  background: rgba(245, 242, 236, 0.05);
+  color: var(--on-ink);
+  font-family: var(--font-body);
+  font-size: 0.98rem;
+}
+
+.form-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0 0 40px;
+}
+.form-fieldset .form-field:last-child,
+.form-fieldset .form-row:last-child { margin-bottom: 0; }
+.form-legend {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  padding: 0;
+  margin-bottom: 20px;
+  border-bottom: 1.5px solid var(--on-paper-border);
+  padding-bottom: 10px;
+}
+
+.form-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.92rem;
+  color: var(--on-paper-dim);
+  cursor: pointer;
+  margin-top: 4px;
+}
+.form-checkbox input { margin-top: 0.25em; flex-shrink: 0; }
+
+.form-callout {
+  background: #fff;
+  border: 1.5px solid var(--gold);
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin: 28px 0 44px;
+  font-size: 0.95rem;
+  color: var(--on-paper);
+  max-width: 620px;
+}
+.form-callout strong { color: var(--ink); }
+
+.brief-honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
 /* demo */
 .demo-form {
   display: flex;

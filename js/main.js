@@ -8,33 +8,41 @@ document.addEventListener('DOMContentLoaded', () => {
   const yearEl = document.getElementById('year');
   if (yearEl) yearEl.textContent = new Date().getFullYear();
 
-  /* ---- header : fond au scroll ---- */
+  /* ---- header : fond au scroll ----
+     Seules les pages avec un hero transparent (l'accueil) ont besoin de ce
+     comportement ; les autres pages forcent déjà `is-scrolled` en dur dans
+     le HTML pour un header toujours sombre, et ce toggle ne doit pas leur
+     retirer cette classe au chargement (scrollY === 0). */
   const header = document.getElementById('siteHeader');
-  const onScroll = () => {
-    header.classList.toggle('is-scrolled', window.scrollY > 12);
-  };
-  onScroll();
-  window.addEventListener('scroll', onScroll, { passive: true });
+  if (header && document.querySelector('.hero')) {
+    const onScroll = () => {
+      header.classList.toggle('is-scrolled', window.scrollY > 12);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+  }
 
   /* ---- menu mobile ---- */
   const navToggle = document.getElementById('navToggle');
   const nav = document.getElementById('siteNav');
   const headerCta = document.querySelector('.header-cta');
 
-  navToggle.addEventListener('click', () => {
-    const isOpen = nav.classList.toggle('is-open');
-    headerCta.classList.toggle('is-open', isOpen);
-    navToggle.setAttribute('aria-expanded', String(isOpen));
-    navToggle.classList.toggle('is-active', isOpen);
-  });
-
-  nav.querySelectorAll('a').forEach(link => {
-    link.addEventListener('click', () => {
-      nav.classList.remove('is-open');
-      headerCta.classList.remove('is-open');
-      navToggle.setAttribute('aria-expanded', 'false');
+  if (navToggle && nav) {
+    navToggle.addEventListener('click', () => {
+      const isOpen = nav.classList.toggle('is-open');
+      if (headerCta) headerCta.classList.toggle('is-open', isOpen);
+      navToggle.setAttribute('aria-expanded', String(isOpen));
+      navToggle.classList.toggle('is-active', isOpen);
     });
-  });
+
+    nav.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        nav.classList.remove('is-open');
+        if (headerCta) headerCta.classList.remove('is-open');
+        navToggle.setAttribute('aria-expanded', 'false');
+      });
+    });
+  }
 
   /* ---- reveal au scroll ---- */
   const revealEls = document.querySelectorAll('[data-reveal]');
@@ -61,26 +69,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const demoInput = document.getElementById('demoCode');
   const demoMessage = document.getElementById('demoMessage');
 
-  demoForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const code = demoInput.value.trim().toUpperCase();
+  if (demoForm) {
+    demoForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const code = demoInput.value.trim().toUpperCase();
 
-    if (!code) {
-      demoMessage.textContent = 'Merci de saisir un code.';
-      demoMessage.className = 'demo-message is-error';
-      return;
-    }
+      if (!code) {
+        demoMessage.textContent = 'Merci de saisir un code.';
+        demoMessage.className = 'demo-message is-error';
+        return;
+      }
 
-    const destination = CLIENT_CODES[code];
-    if (destination) {
-      demoMessage.textContent = 'Redirection en cours…';
-      demoMessage.className = 'demo-message is-ok';
-      window.location.href = destination;
-    } else {
-      demoMessage.textContent = 'Code introuvable. Vérifiez le code reçu ou contactez-nous.';
-      demoMessage.className = 'demo-message is-error';
-    }
-  });
+      const destination = CLIENT_CODES[code];
+      if (destination) {
+        demoMessage.textContent = 'Redirection en cours…';
+        demoMessage.className = 'demo-message is-ok';
+        window.location.href = destination;
+      } else {
+        demoMessage.textContent = 'Code introuvable. Vérifiez le code reçu ou contactez-nous.';
+        demoMessage.className = 'demo-message is-error';
+      }
+    });
+  }
 
   /* ---- formulaire de contact (Formspree) ---- */
   const contactForm = document.querySelector('.contact-form');
