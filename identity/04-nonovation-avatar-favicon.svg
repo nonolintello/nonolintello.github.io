@@ -1,0 +1,5 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="256" cy="256" r="256" fill="#F5F2EC"/>
+  <circle cx="256" cy="256" r="248" fill="none" stroke="#161A33" stroke-width="3"/>
+  <text x="256" y="340" text-anchor="middle" font-family="'Space Grotesk','Archivo',sans-serif" font-weight="800" font-size="300" fill="#161A33">И</text>
+</svg>
